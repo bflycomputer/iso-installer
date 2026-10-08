@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Computer details">
+<circle id="Ellipse 6039" cx="25.4561" cy="4.94975" r="3" transform="rotate(45 25.4561 4.94975)" stroke="#4C5164"/>
+<circle id="Ellipse 6040" cx="3.5" cy="3.5" r="3" transform="matrix(0.707107 0.707107 0.707107 -0.707107 0 25.457)" stroke="#4C5164"/>
+<line id="Line 310" x1="22.2745" y1="8.1309" x2="13.7892" y2="16.6162" stroke="#4C5164"/>
+<line id="Line 311" y1="-0.5" x2="12" y2="-0.5" transform="matrix(0.707107 -0.707107 -0.707107 -0.707107 7.77832 21.9219)" stroke="#4C5164"/>
+<circle id="Ellipse 6041" cx="25.4565" cy="25.457" r="3" transform="rotate(135 25.4565 25.457)" stroke="#4C5164"/>
+<circle id="Ellipse 6042" cx="3.5" cy="3.5" r="3" transform="matrix(-0.707107 0.707107 0.707107 0.707107 4.9502 0)" stroke="#4C5164"/>
+<line id="Line 312" x1="22.2744" y1="22.2754" x2="13.7891" y2="13.7901" stroke="#4C5164"/>
+<line id="Line 313" y1="-0.5" x2="12" y2="-0.5" transform="matrix(0.707107 0.707107 0.707107 -0.707107 8.48535 7.77734)" stroke="#4C5164"/>
+</g>
+</svg>
+
