@@ -1,0 +1,134 @@
+pragma ComponentBehavior: Bound
+import QtQuick
+import ".."
+
+Item {
+    id: root
+    anchors.fill: parent
+
+    property Item shell: null
+    readonly property bool childOwnsFocus: true
+    readonly property int rowCount: 4
+    property int activeRow: 0
+    property bool validationRequested: false
+
+    readonly property var rows: [
+        { label: "Username", placeholder: "Enter username", key: "username", error: "usernameError" },
+        { label: "Password", placeholder: "Password", key: "password", error: "passwordError" },
+        { label: "Confirm password", placeholder: "Confirm password", key: "passwordConfirmation", error: "confirmationError" },
+        { label: "Computer name", placeholder: "Enter computer name", key: "hostname", error: "hostnameError" }
+    ]
+    readonly property int completedCount: rows.filter((row, index) => fieldCompleted(index)).length
+
+    function activateRow(index) {
+        if (index < 0 || index >= rowCount)
+            return
+        activeRow = index
+        const row = fields.itemAt(index)
+        if (row)
+            row.focusInput()
+    }
+
+    function moveSelection(delta) { activateRow((activeRow + delta + rowCount) % rowCount) }
+    function chooseIndex(index) { activateRow(index) }
+
+    function accept() {
+        if (activeRow < rowCount - 1)
+            activateRow(activeRow + 1)
+        else
+            submit()
+    }
+
+    function submit() {
+        validationRequested = true
+
+        // The controller validates and may replace this screen synchronously,
+        // so the field to return to is chosen before advancing.
+        const invalid = firstInvalidRow()
+        pond.advance()
+        if (invalid >= 0)
+            activateRow(invalid)
+    }
+
+    function firstInvalidRow() {
+        return rows.findIndex(row => pond[row.error] !== "")
+    }
+    function fieldCompleted(index) {
+        const row = rows[index]
+        return pond[row.key] !== "" && (index === 1 || pond[row.error] === "")
+            && (index !== 2 || pond.passwordError === "")
+    }
+
+    Title {
+        y: 289
+        width: 210
+        x: 864 - width / 2
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.WordWrap
+        text: "Set up your profile"
+    }
+
+    Repeater {
+        id: fields
+        model: root.rowCount
+
+        Field {
+            id: row
+            required property int index
+            readonly property bool complete: root.fieldCompleted(index)
+            function focusInput() { input.forceActiveFocus() }
+
+            x: 571
+            y: 405 + index * 80
+            labelWidth: 201
+            compactLabel: index >= 2
+            label: root.rows[index].label
+            active: index === root.activeRow
+            labelColor: active ? Theme.bg : Theme.textDim
+            onClicked: root.activateRow(index)
+            Component.onCompleted: if (active) Qt.callLater(focusInput)
+
+            FText {
+                visible: input.text.length === 0
+                x: 15
+                y: Theme.capYBase(19)
+                text: root.rows[row.index].placeholder
+                color: row.active ? Theme.textWhite : Theme.textDim
+                opacity: row.active ? 0.3 : 1
+                font: Theme.base
+                lh: Theme.lhBase
+            }
+
+            TextInput {
+                id: input
+                objectName: "profileInput" + row.index
+                x: 15
+                width: 329
+                height: 48
+                verticalAlignment: TextInput.AlignVCenter
+                text: pond[root.rows[row.index].key]
+                color: Theme.textWhite
+                font: Theme.base
+                echoMode: row.index === 1 || row.index === 2 ? TextInput.Password : TextInput.Normal
+                inputMethodHints: Qt.ImhNoPredictiveText
+                                  | (row.index === 1 || row.index === 2 ? Qt.ImhSensitiveData : 0)
+                selectByMouse: true
+                Keys.forwardTo: root.shell ? [root.shell] : []
+                onTextEdited: pond[root.rows[row.index].key] = text
+                onActiveFocusChanged: if (activeFocus && root.activeRow !== row.index) root.activeRow = row.index
+            }
+        }
+    }
+
+    ErrorText {
+        visible: root.validationRequested && pond[root.rows[root.activeRow].error] !== ""
+        y: 727
+        text: pond[root.rows[root.activeRow].error]
+    }
+
+    NavBar {
+        y: 763
+        anchors.horizontalCenter: parent.horizontalCenter
+        label: "Confirm"
+    }
+}
