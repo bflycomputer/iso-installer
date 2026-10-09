@@ -1,5 +1,5 @@
 """Live-system setup choices and profile field validation."""
-import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from PySide6.QtCore import QDateTime, QLocale, QTimeZone
 
@@ -61,22 +61,14 @@ def languages(path="/usr/share/i18n/SUPPORTED"):
     return items
 
 
-def keyboards(path="/usr/share/X11/xkb/rules/base.lst"):
-    items, section = [], ""
-    for line in Path(path).read_text().splitlines():
-        if line.startswith("!"):
-            section = line.split()[1]
-            continue
-        match = re.match(r"\s+(\S+)\s+(.+?)\s*$", line)
-        if not match:
-            continue
-        if section == "layout":
-            items.append({"label": match[2], "value": match[1], "variant": "", "detail": ""})
-        elif section == "variant":
-            layout, _, label = match[2].partition(": ")
-            items.append({"label": label, "value": layout, "variant": match[1], "detail": ""})
-    items.sort(key=lambda i: (i["value"] != "us" or i["variant"] != "", i["label"]))
-    return items
+def keyboards(path="/usr/share/X11/xkb/rules/evdev.xml"):
+    items = []
+    for layout in ET.parse(path).iterfind("layoutList/layout"):
+        name = layout.findtext("configItem/name")
+        if name != "custom":
+            items.append({"label": layout.findtext("configItem/description"), "value": name,
+                          "variant": "", "detail": ""})
+    return sorted(items, key=lambda item: item["label"].casefold())
 
 
 def timezones(current, path="/usr/share/zoneinfo/zone.tab"):
