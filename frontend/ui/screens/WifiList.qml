@@ -7,8 +7,8 @@ Item {
     anchors.fill: parent
 
     readonly property int rowCount: networks.count
-    readonly property int activeRow: pond.selectedNetwork >= 0 && pond.selectedNetwork < rowCount
-        ? pond.selectedNetwork : 0
+    readonly property int activeRow: controller.selectedNetwork >= 0 && controller.selectedNetwork < rowCount
+        ? controller.selectedNetwork : 0
 
     function moveSelection(delta) {
         if (rowCount > 0)
@@ -16,15 +16,15 @@ Item {
     }
     function chooseIndex(index) {
         if (index >= 0 && index < rowCount)
-            pond.selectedNetwork = index
+            controller.selectedNetwork = index
     }
     function accept() {
-        pond.selectedNetwork = rowCount > 0 ? activeRow : -1
-        pond.advance()
+        controller.selectedNetwork = rowCount > 0 ? activeRow : -1
+        controller.advance()
     }
     function handleTextInput(text) {
-        if (text.toLowerCase() === "c" && pond.wifi.networkConnected) {
-            pond.continueConnected()
+        if (text.toLowerCase() === "c" && controller.wifi.networkConnected) {
+            controller.continueConnected()
             return true
         }
         return false
@@ -53,7 +53,7 @@ Item {
             width: 360
             height: parent.height - 16
             spacing: 0
-            model: pond.wifi
+            model: controller.wifi
             currentIndex: root.activeRow
             highlightMoveDuration: 0
             boundsBehavior: Flickable.StopAtBounds
@@ -82,7 +82,7 @@ Item {
                     active: netRow.index === root.activeRow
                 }
 
-                FText {
+                Label {
                     x: 40
                     anchors.verticalCenter: parent.verticalCenter
                     width: 275
@@ -117,15 +117,15 @@ Item {
                 }
             }
 
-            FText {
+            Label {
                 visible: networks.count === 0
                 anchors.centerIn: parent
                 width: 340
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
-                text: pond.wifi.scanning ? "Looking for networks…"
-                      : pond.wifi.networkConnected ? "Connected with a cable. Press Enter to continue."
-                      : pond.wifi.available ? "No Wi-Fi networks found"
+                text: controller.wifi.scanning ? "Looking for networks…"
+                      : controller.wifi.networkConnected ? "Connected with a cable. Press Enter to continue."
+                      : controller.wifi.available ? "No Wi-Fi networks found"
                                                        : "No Wi-Fi adapter found"
                 color: Theme.textWhite
                 opacity: 0.7
@@ -136,10 +136,10 @@ Item {
     }
 
     ErrorText {
-        visible: (pond.errorMessage !== ""
-                                     || pond.wifi.errorMessage !== "")
+        visible: (controller.errorMessage !== ""
+                                     || controller.wifi.errorMessage !== "")
         y: 706
-        text: pond.errorMessage !== "" ? pond.errorMessage : pond.wifi.errorMessage
+        text: controller.errorMessage !== "" ? controller.errorMessage : controller.wifi.errorMessage
     }
 
     NavBar {
@@ -149,8 +149,8 @@ Item {
         chevronWidth: 104
     }
 
-    FText {
-        visible: pond.wifi.networkConnected && root.rowCount > 0
+    Label {
+        visible: controller.wifi.networkConnected && root.rowCount > 0
         y: 654
         anchors.horizontalCenter: parent.horizontalCenter
         text: "C   Continue with current connection"
@@ -158,7 +158,7 @@ Item {
         MouseArea {
             anchors.fill: parent; anchors.margins: -12
             cursorShape: Qt.PointingHandCursor
-            onClicked: pond.continueConnected()
+            onClicked: controller.continueConnected()
         }
     }
 }

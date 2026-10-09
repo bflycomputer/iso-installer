@@ -8,12 +8,12 @@ Rectangle {
 
     signal back
 
-    readonly property string routeName: pond.route
+    readonly property string routeName: controller.route
 
     // Chrome flags a screen may override. Written out per flag: QML only
     // tracks a binding dependency on a named property access.
-    readonly property bool showDecisionTree:
-        !sceneLoader.item || sceneLoader.item.showDecisionTree === undefined || sceneLoader.item.showDecisionTree
+    readonly property bool showProgressTree:
+        !sceneLoader.item || sceneLoader.item.showProgressTree === undefined || sceneLoader.item.showProgressTree
     readonly property int rowCount:
         sceneLoader.item && sceneLoader.item.rowCount !== undefined ? sceneLoader.item.rowCount : 0
     // A text field owns typing: digit shortcuts, left/right and space go to it.
@@ -23,13 +23,13 @@ Rectangle {
     property int acceptKey: 0
     property bool escapeHeld: false
 
-    readonly property real s: Math.min(width / Theme.canvasW, height / Theme.canvasH)
+    readonly property real designScale: Math.min(width / Theme.canvasW, height / Theme.canvasH)
 
     // ---- Decision-tree state, derived from the route history and the
     // controller's choices so a changed earlier answer drops its old branch.
     readonly property string decisionStage: stageForRoute(routeName)
     readonly property string localeCode: {
-        const name = pond.localeName
+        const name = controller.localeName
         const language = name.split(/[_.-]/)[0]
         return (language.length >= 2 ? language.slice(0, 2) : "en").toUpperCase()
     }
@@ -115,7 +115,7 @@ Rectangle {
     }
 
     function requestPowerOff() {
-        pond.powerOffComputer()
+        controller.powerOffComputer()
     }
 
     function move(delta) {
@@ -217,7 +217,7 @@ Rectangle {
     Keys.onReleased: function (event) { shell.handleKeyRelease(event) }
 
     // ---- Decision tree derivation.
-    function visited(route) { return pond.routeTrail.indexOf(route) >= 0 }
+    function visited(route) { return controller.routeTrail.indexOf(route) >= 0 }
 
     function stageForRoute(route) {
         switch (route) {
@@ -234,7 +234,7 @@ Rectangle {
     }
 
     function chosen(propertyName) {
-        return Math.max(1, Number(pond[propertyName]) + 1)
+        return Math.max(1, Number(controller[propertyName]) + 1)
     }
 
     function branchDepthForRoute(route) {
@@ -275,7 +275,7 @@ Rectangle {
         width: Theme.canvasW
         height: Theme.canvasH
         anchors.centerIn: parent
-        scale: shell.s
+        scale: shell.designScale
 
         Loader {
             id: sceneLoader
@@ -294,7 +294,7 @@ Rectangle {
             y: 10
         }
 
-        DecisionTree {
+        ProgressTree {
             stage: shell.decisionStage
             localeCode: shell.localeCode
             decisionChoices: shell.decisionChoices
@@ -306,7 +306,7 @@ Rectangle {
             profileActive: shell.profileActive
             escapePressed: shell.escapeHeld || escapeFlash.running
             onEscapeClicked: shell.navigateBack()
-            visible: shell.showDecisionTree
+            visible: shell.showProgressTree
 
             transformOrigin: Item.TopRight
             anchors.right: parent.right
@@ -315,7 +315,7 @@ Rectangle {
             anchors.topMargin: 10
         }
 
-        FText {
+        Label {
             text: "Early Preview"
             color: Theme.chromeMuted
             font: Theme.xl
@@ -341,7 +341,7 @@ Rectangle {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 50
 
-            FText {
+            Label {
                 anchors.centerIn: parent
                 text: "ISO INSTALLER"
                 color: Theme.isoBadge
@@ -350,7 +350,7 @@ Rectangle {
             }
         }
 
-        FText {
+        Label {
             text: "Some features may not work as expected. Please report any issues or bugs."
             color: Theme.chromeMuted
             font: Theme.xs

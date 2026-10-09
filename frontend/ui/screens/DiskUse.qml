@@ -8,20 +8,20 @@ Item {
 
     readonly property int rowCount: options.count
     readonly property int activeRow: rowCount > 0
-        ? Math.max(0, Math.min(rowCount - 1, pond.selectedInstallOption)) : -1
-    readonly property var drive: pond.selectedDriveData
+        ? Math.max(0, Math.min(rowCount - 1, controller.selectedInstallOption)) : -1
+    readonly property var drive: controller.selectedDriveData
 
     function chooseIndex(index) {
         if (index >= 0 && index < rowCount)
-            pond.selectedInstallOption = index
+            controller.selectedInstallOption = index
     }
     function moveSelection(delta) {
         if (rowCount > 0)
             chooseIndex((activeRow + delta + rowCount) % rowCount)
     }
     function accept() {
-        pond.selectedInstallOption = activeRow
-        pond.advance()
+        controller.selectedInstallOption = activeRow
+        controller.advance()
     }
 
     Title {
@@ -44,7 +44,7 @@ Item {
         border.width: 1
         border.color: Qt.rgba(0.796, 0.651, 0.969, 0.6)
 
-        FText {
+        Label {
             id: driveName
             x: 14
             y: 10
@@ -53,7 +53,7 @@ Item {
             font: Theme.displaySm
             lh: Theme.lhDisplaySm
         }
-        FText {
+        Label {
             id: driveDetails
             x: 14
             y: Theme.capYSm(34)
@@ -75,18 +75,18 @@ Item {
         spacing: 6
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        model: pond.installOptions
+        model: controller.installOptions
         currentIndex: root.activeRow
         highlightMoveDuration: 0
         onContentYChanged: Theme.blockHover()
 
-        delegate: DecisionCard {
+        delegate: InstallOptionCard {
             id: card
             required property int index
             required property var modelData
             number: index + 1
             active: index === root.activeRow
-            freeSpace: modelData.type === "empty"
+            freeSpace: modelData.mode === "free-space"
             detail: String(modelData.detail || "")
             onSelected: root.chooseIndex(index)
             onAccepted: {
@@ -97,7 +97,7 @@ Item {
             StorageBar {
                 anchors.fill: parent
                 segments: card.modelData.plannedSegments
-                animationMode: card.modelData.type === "erase" ? "erase" : "none"
+                animationMode: card.modelData.mode === "replace" ? "erase" : "none"
             }
         }
     }

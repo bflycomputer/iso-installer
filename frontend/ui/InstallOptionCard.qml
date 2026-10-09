@@ -49,7 +49,7 @@ Item {
             freeSpace: root.freeSpace
         }
 
-        FText {
+        Label {
             y: Theme.capYBase(58)
             width: parent.width
             elide: Text.ElideRight

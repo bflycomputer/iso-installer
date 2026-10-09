@@ -74,7 +74,7 @@ Item {
                 radius: highlighted ? 4 : 12
                 color: highlighted ? Theme.green : "transparent"
 
-                FText {
+                Label {
                     x: 12
                     y: Theme.capYSm(15.5)
                     width: parent.width - 24

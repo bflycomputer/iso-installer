@@ -4,7 +4,7 @@ import QtQuick
 // pointer for three seconds; the lavender fill shows progress. The owning
 // screen implements beginAccept/endAccept and receives `completed`.
 Rectangle {
-    id: pill
+    id: button
 
     property string label: ""
     property bool busy: false
@@ -35,26 +35,26 @@ Rectangle {
 
     NumberAnimation {
         id: hold
-        target: pill
+        target: button
         property: "progress"
         from: 0
         to: 1
-        duration: pill.holdMs
-        onFinished: pill.completed()
+        duration: button.holdMs
+        onFinished: button.completed()
     }
 
     // Reveal a full-size pill so its curved edge stays fixed as progress
     // advances. Resizing a rounded rectangle distorts the left cap and
     // leaks into the corners: an Item's clip only clips its bounding box.
     Item {
-        width: pill.width * pill.progress
-        height: pill.height
+        width: button.width * button.progress
+        height: button.height
         clip: true
 
         Rectangle {
-            width: pill.width
-            height: pill.height
-            radius: pill.radius
+            width: button.width
+            height: button.height
+            radius: button.radius
             color: Theme.lavender
             opacity: 0.72
         }
@@ -70,8 +70,8 @@ Rectangle {
             source: "../assets/icons/enter-key.svg"
             sourceSize: Qt.size(40, 40)
         }
-        FText {
-            text: pill.busy ? pill.busyLabel : pill.label
+        Label {
+            text: button.busy ? button.busyLabel : button.label
             color: Theme.onAccent
             font: Theme.base
             lh: Theme.lhBase
@@ -81,8 +81,8 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onPressed: pill.begin()
-        onReleased: pill.end()
-        onCanceled: pill.end()
+        onPressed: button.begin()
+        onReleased: button.end()
+        onCanceled: button.end()
     }
 }

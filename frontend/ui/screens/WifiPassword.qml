@@ -13,11 +13,11 @@ Item {
     property bool passwordVisible: false
     property var maskSequence: []
 
-    readonly property bool connecting: pond.wifi.connecting
-    readonly property string joinError: pond.errorMessage !== "" ? pond.errorMessage : pond.wifi.errorMessage
+    readonly property bool connecting: controller.wifi.connecting
+    readonly property string joinError: controller.errorMessage !== "" ? controller.errorMessage : controller.wifi.errorMessage
     readonly property bool joinFailed: !connecting && joinError !== ""
     readonly property int selectedStrength:
-        pond.selectedNetworkStrength
+        controller.selectedNetworkStrength
 
     readonly property var maskGlyphs: ["../../assets/icons/password-mask-plant.svg",
                                        "../../assets/icons/password-mask-lily-pad.svg",
@@ -64,7 +64,7 @@ Item {
 
     function submit() {
         if (!connecting)
-            pond.connectSelectedNetwork(password.text)
+            controller.connectSelectedNetwork(password.text)
     }
 
     Component.onCompleted: {
@@ -87,12 +87,12 @@ Item {
         radius: 16
         color: Theme.surface
 
-        FText {
+        Label {
             x: 20
             y: 20
             width: 285
             elide: Text.ElideRight
-            text: "Join “" + (pond.selectedSsid) + "”"
+            text: "Join “" + (controller.selectedSsid) + "”"
             color: Theme.textWhite
             font: Theme.lg
             lh: Theme.lhLg
@@ -142,7 +142,7 @@ Item {
             }
         }
 
-        FText {
+        Label {
             visible: root.connecting
             x: 60
             y: Theme.capYSm(84)
@@ -153,7 +153,7 @@ Item {
             lh: Theme.lhSm
         }
 
-        FText {
+        Label {
             visible: !root.connecting
             x: 20
             y: Theme.capYBase(80)

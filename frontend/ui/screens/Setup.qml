@@ -18,24 +18,24 @@ Item {
     // The controller hands the long lists over as JSON: indexing a Python-backed
     // list from QML re-converts the whole list on every access, which made
     // type-ahead over 600 keyboard layouts take seconds per keystroke.
-    readonly property var languageChoices: JSON.parse(pond.languageChoices)
-    readonly property var keyboardChoices: JSON.parse(pond.keyboardChoices)
-    readonly property var regionChoices: JSON.parse(pond.regionChoices)
+    readonly property var languageChoices: JSON.parse(controller.languageChoices)
+    readonly property var keyboardChoices: JSON.parse(controller.keyboardChoices)
+    readonly property var regionChoices: JSON.parse(controller.regionChoices)
 
     function choices(row) {
         return row === 0 ? languageChoices : row === 1 ? keyboardChoices : regionChoices
     }
 
     function currentValue(row) {
-        return row === 0 ? pond.languageLabel
-             : row === 1 ? pond.keyboardLabel : pond.regionLabel
+        return row === 0 ? controller.languageLabel
+             : row === 1 ? controller.keyboardLabel : controller.regionLabel
     }
 
     function openDropdown(row) {
         activeRow = row
         if (choices(row).length === 0)
             return
-        highlightedChoice = Math.max(0, pond.setupChoiceIndex(row))
+        highlightedChoice = Math.max(0, controller.setupChoiceIndex(row))
         typeAhead = ""
         dropdownOpen = true
         Qt.callLater(function() { dropdown.positionAt(highlightedChoice) })
@@ -59,7 +59,7 @@ Item {
     function selectChoice(index) {
         if (index < 0 || index >= choices(activeRow).length)
             return
-        pond.selectSetupChoice(activeRow, index)
+        controller.selectSetupChoice(activeRow, index)
         closeDropdown()
         activeRow = activeRow + 1
     }
@@ -98,7 +98,7 @@ Item {
 
     function submit() {
         closeDropdown()
-        pond.advance()
+        controller.advance()
     }
 
     function dismiss() {
@@ -117,8 +117,8 @@ Item {
         const values = choices(activeRow)
         if (activeRow >= continueRow || values.length === 0)
             return
-        const index = (Math.max(0, pond.setupChoiceIndex(activeRow)) + delta + values.length) % values.length
-        pond.selectSetupChoice(activeRow, index)
+        const index = (Math.max(0, controller.setupChoiceIndex(activeRow)) + delta + values.length) % values.length
+        controller.selectSetupChoice(activeRow, index)
     }
 
     // Type-ahead inside an open dropdown. Exact matches win, then prefixes,
@@ -132,7 +132,7 @@ Item {
 
         const values = choices(activeRow)
         const query = typeAhead.replace(/[^a-z0-9]+/g, "")
-        const currentLayout = activeRow === 1 ? String(pond.keyboardLayout || "") : ""
+        const currentLayout = activeRow === 1 ? String(controller.keyboardLayout || "") : ""
         function rank(item) {
             const fields = [item.label, item.detail, item.value, item.variant]
             let combined = ""
@@ -189,7 +189,7 @@ Item {
             active: index === root.activeRow
             onClicked: root.openDropdown(index)
 
-            FText {
+            Label {
                 x: 15
                 y: Theme.capYBase(19)
                 width: 300

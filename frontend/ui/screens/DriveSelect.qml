@@ -8,11 +8,11 @@ Item {
 
     readonly property int rowCount: driveList.count
     readonly property bool scrollMode: rowCount > 2
-    readonly property int activeRow: Math.max(0, Math.min(rowCount - 1, pond.selectedDrive))
+    readonly property int activeRow: Math.max(0, Math.min(rowCount - 1, controller.selectedDrive))
 
     function selectDrive(index) {
-        if (rowCount > 0 && pond.selectedDrive !== index)
-            pond.selectedDrive = Math.max(0, Math.min(rowCount - 1, index))
+        if (rowCount > 0 && controller.selectedDrive !== index)
+            controller.selectedDrive = Math.max(0, Math.min(rowCount - 1, index))
     }
     function moveSelection(delta) {
         if (rowCount > 0)
@@ -23,11 +23,11 @@ Item {
             selectDrive(index)
     }
     function accept() {
-        pond.selectedDrive = activeRow
-        pond.advance()
+        controller.selectedDrive = activeRow
+        controller.advance()
     }
 
-    DriveArt {
+    DriveIllustration {
         driveCount: root.rowCount
         selectedIndex: root.activeRow
         scrollMode: root.scrollMode
@@ -57,7 +57,7 @@ Item {
         spacing: 8
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        model: pond.drives
+        model: controller.drives
         currentIndex: root.activeRow
         highlightMoveDuration: 0
 
@@ -94,7 +94,7 @@ Item {
                 radius: 24
                 color: item.active ? Theme.lavender : Theme.surface
 
-                FText {
+                Label {
                     x: 24
                     y: 24
                     width: 270
@@ -105,7 +105,7 @@ Item {
                     lh: Theme.lhLg
                 }
 
-                FText {
+                Label {
                     x: 24
                     y: Theme.capYBase(56)
                     width: 440
@@ -129,7 +129,7 @@ Item {
                         id: stat
                         required property var modelData
 
-                        FText {
+                        Label {
                             x: 24
                             y: Theme.capYBase(stat.modelData.y)
                             opacity: 0.7
@@ -138,7 +138,7 @@ Item {
                             font: Theme.base
                             lh: Theme.lhBase
                         }
-                        FText {
+                        Label {
                             x: 103
                             y: Theme.capYBase(stat.modelData.y)
                             opacity: 0.7
@@ -169,7 +169,7 @@ Item {
                         border.color: "black"
                     }
 
-                    FText {
+                    Label {
                         visible: item.empty
                         anchors.centerIn: parent
                         opacity: 0.7
@@ -197,11 +197,11 @@ Item {
             }
         }
 
-        FText {
+        Label {
             visible: driveList.count === 0
             anchors.horizontalCenter: parent.horizontalCenter
             y: 100
-            text: !pond.storageReady
+            text: !controller.storageReady
                   ? "Looking for storage…" : "No installable storage found"
             color: Theme.textWhite
             opacity: 0.7
@@ -242,16 +242,16 @@ Item {
         y: root.scrollMode ? 956 : 746
     }
 
-    FText {
+    Label {
         z: 4
         y: root.scrollMode ? 996 : 850
         anchors.horizontalCenter: parent.horizontalCenter
-        text: !pond.storageReady ? "Reading disks…" : "Refresh disks"
+        text: !controller.storageReady ? "Reading disks…" : "Refresh disks"
         color: Theme.lavender; font: Theme.sm; lh: Theme.lhSm
         MouseArea {
             anchors.fill: parent; anchors.margins: -10
             cursorShape: Qt.PointingHandCursor
-            onClicked: pond.refreshDisks()
+            onClicked: controller.refreshDisks()
         }
     }
 

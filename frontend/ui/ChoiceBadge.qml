@@ -19,7 +19,7 @@ Rectangle {
         radius: 15
         color: Theme.bg
 
-        FText {
+        Label {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: badge.numeralOffset
             text: String(badge.number)

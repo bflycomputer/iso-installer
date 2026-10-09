@@ -7,13 +7,13 @@ Item {
 
     readonly property int rowCount: 0
 
-    readonly property var option: pond.installOptions[pond.selectedInstallOption] || ({})
-    readonly property var drive: pond.selectedDriveData
+    readonly property var option: controller.installOptions[controller.selectedInstallOption] || ({})
+    readonly property var drive: controller.selectedDriveData
     readonly property real cardX: 605
     readonly property real cardY: 281
 
     function accept() {
-        pond.advance()
+        controller.advance()
     }
 
     Rectangle {
@@ -39,7 +39,7 @@ Item {
             text: "Replace the contents of this disk?"
         }
 
-        FText {
+        Label {
             x: 40
             y: Theme.capYSmR(212)
             width: 438
@@ -61,7 +61,7 @@ Item {
             radius: 12
             color: Theme.cardInset
 
-            FText {
+            Label {
                 x: 20
                 y: 20
                 width: 380
@@ -71,7 +71,7 @@ Item {
                 font: Theme.lg
                 lh: Theme.lhLg
             }
-            FText {
+            Label {
                 x: 20
                 y: Theme.capYBaseR(53)
                 width: 380
@@ -88,7 +88,7 @@ Item {
     ChoiceBadge {
         x: 840
         y: 257
-        number: pond.selectedInstallOption + 1
+        number: controller.selectedInstallOption + 1
     }
 
     NavBar {

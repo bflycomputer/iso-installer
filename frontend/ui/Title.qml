@@ -1,6 +1,6 @@
 import QtQuick
 
-FText {
+Label {
     color: Theme.textWhite
     font: Theme.xl
     lh: Theme.lhXl

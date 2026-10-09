@@ -4,13 +4,13 @@ import ".."
 Item {
     id: root
     readonly property int rowCount: 0
-    readonly property int minimum: pond.minimumAllocationGiB
-    readonly property int maximum: pond.maximumAllocationGiB
-    readonly property int amount: pond.allocationGiB
+    readonly property int minimum: controller.minimumAllocationGiB
+    readonly property int maximum: controller.maximumAllocationGiB
+    readonly property int amount: controller.allocationGiB
     function moveSelection(delta) { adjust(-delta) }
-    function accept() { pond.advance() }
+    function accept() { controller.advance() }
     function adjust(delta) {
-        pond.allocationGiB = Math.max(minimum, Math.min(maximum, amount + delta))
+        controller.allocationGiB = Math.max(minimum, Math.min(maximum, amount + delta))
     }
     Title {
         y: 310
@@ -41,16 +41,16 @@ Item {
                 anchors.bottomMargin: -18
                 cursorShape: Qt.PointingHandCursor
                 function setAmount(mouse) {
-                    pond.allocationGiB = Math.round(root.minimum + Math.max(0, Math.min(1, mouse.x / width)) * (root.maximum - root.minimum))
+                    controller.allocationGiB = Math.round(root.minimum + Math.max(0, Math.min(1, mouse.x / width)) * (root.maximum - root.minimum))
                 }
                 onPressed: function(mouse) { setAmount(mouse) }
                 onPositionChanged: function(mouse) { if (pressed) setAmount(mouse) }
             }
         }
-        FText { x: 28; y: 132; text: root.minimum + " GiB minimum"; color: Theme.textCream; font: Theme.sm; lh: Theme.lhSm }
-        FText { x: 320; y: 132; width: 212; horizontalAlignment: Text.AlignRight; text: root.maximum + " GiB available"; color: Theme.textCream; font: Theme.sm; lh: Theme.lhSm }
+        Label { x: 28; y: 132; text: root.minimum + " GiB minimum"; color: Theme.textCream; font: Theme.sm; lh: Theme.lhSm }
+        Label { x: 320; y: 132; width: 212; horizontalAlignment: Text.AlignRight; text: root.maximum + " GiB available"; color: Theme.textCream; font: Theme.sm; lh: Theme.lhSm }
     }
-    FText {
+    Label {
         y: 644; width: 600
         anchors.horizontalCenter: parent.horizontalCenter
         horizontalAlignment: Text.AlignHCenter

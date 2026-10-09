@@ -1,7 +1,7 @@
 import QtQuick
 
-FText {
-    text: pond.errorMessage
+Label {
+    text: controller.errorMessage
     visible: text !== ""
     anchors.horizontalCenter: parent.horizontalCenter
     color: Theme.textError

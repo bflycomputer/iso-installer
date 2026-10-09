@@ -5,9 +5,9 @@ import ".."
 Rectangle {
     id: root
 
-    readonly property bool failed: Boolean(pond.failed)
-    readonly property string failureMessage: String(pond.failureMessage)
-    readonly property string failureDetails: String(pond.warnings)
+    readonly property bool failed: Boolean(controller.failed)
+    readonly property string failureMessage: String(controller.failureMessage)
+    readonly property string failureDetails: String(controller.warnings)
     readonly property real designScale: Math.min(width / 1728, height / 1117)
 
     color: "#1a1409"
@@ -15,10 +15,10 @@ Rectangle {
 
     Keys.onPressed: function(event) {
         if (!root.failed && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)) {
-            pond.restartComputer()
+            controller.restartComputer()
             event.accepted = true
         } else if (root.failed && event.key === Qt.Key_Escape) {
-            pond.powerOffComputer()
+            controller.powerOffComputer()
             event.accepted = true
         }
     }
@@ -85,8 +85,8 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (root.failed) pond.powerOffComputer()
-                    else pond.restartComputer()
+                    if (root.failed) controller.powerOffComputer()
+                    else controller.restartComputer()
                 }
             }
 
@@ -102,9 +102,9 @@ Rectangle {
         }
 
         Text {
-            visible: pond.errorMessage !== ""
+            visible: controller.errorMessage !== ""
             width: parent.width
-            text: pond.errorMessage
+            text: controller.errorMessage
             color: Theme.textError
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap

@@ -8,29 +8,29 @@ import ".."
 Rectangle {
     id: root
 
-    readonly property string status: String(pond.status)
+    readonly property string status: String(controller.status)
 
     // Names the machine being installed onto; the design shows up to four
     // words as coloured tags.
-    readonly property string deviceName: pond.deviceName ? String(pond.deviceName) : "Pond"
+    readonly property string deviceName: controller.deviceName ? String(controller.deviceName) : "Pond"
 
     color: "#1a1409"
     focus: true
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (!event.isAutoRepeat) cancelPill.begin()
+            if (!event.isAutoRepeat) cancelButton.begin()
             event.accepted = true
         }
     }
     Keys.onReleased: function(event) {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (!event.isAutoRepeat) cancelPill.end()
+            if (!event.isAutoRepeat) cancelButton.end()
             event.accepted = true
         }
     }
     Connections {
         target: root.Window.window
-        function onActiveChanged() { if (!target.active) cancelPill.end() }
+        function onActiveChanged() { if (!target.active) cancelButton.end() }
     }
 
     readonly property real designScale: Math.min(width / 1728, height / 1117)
@@ -299,7 +299,7 @@ Rectangle {
             font.weight: Font.Medium
             font.letterSpacing: 0.11
         }
-        FText {
+        Label {
             y: 978
             anchors.horizontalCenter: parent.horizontalCenter
             width: 700
@@ -309,16 +309,16 @@ Rectangle {
             font: Theme.base
             lh: Theme.lhBase
         }
-        HoldPill {
-            id: cancelPill
+        HoldButton {
+            id: cancelButton
             x: 744; y: 1020
             label: "Cancel install"
             busyLabel: "Cleaning up…"
             busy: root.status === "Cancelling and cleaning up…"
-            onCompleted: pond.cancelInstallation()
+            onCompleted: controller.cancelInstallation()
         }
 
-        FText {
+        Label {
             y: 1092
             anchors.horizontalCenter: parent.horizontalCenter
             text: "Hold for 3s"

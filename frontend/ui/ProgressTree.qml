@@ -189,7 +189,7 @@ Item {
     // Both vector states render on the software backend without a shader.
     Item {
         id: escapeControl
-        objectName: "pondDecisionTreeEscapeControl"
+        objectName: "progressTreeEscapeControl"
         x: tree.baseX
         y: 5
         width: 50
@@ -254,7 +254,7 @@ Item {
                 source: "../assets/progress/language-completed.svg"
                 sourceSize: Qt.size(50, 60)
             }
-            FText {
+            Label {
                 anchors.fill: parent
                 text: tree.languageText()
                 color: Theme.lavender
@@ -363,7 +363,7 @@ Item {
                     border.color: decisionNode.nodeColor
                 }
 
-                FText {
+                Label {
                     anchors.centerIn: parent
                     width: 8
                     text: String(tree.decisionChoice(decisionNode.index))

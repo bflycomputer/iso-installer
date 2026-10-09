@@ -21,7 +21,7 @@ Item {
         sourceSize: Qt.size(320, 320)
     }
 
-    FText {
+    Label {
         x: 34
         y: 3
         width: 28

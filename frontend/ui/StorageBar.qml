@@ -33,15 +33,15 @@ Rectangle {
             y: 1
             width: Math.max(0, bar.edge(index + 1) - bar.edge(index))
             height: bar.height - 2
-            color: bar.segments[index].pond ? Theme.green : bar.segments[index].free ? "white"
+            color: bar.segments[index].isPlannedRoot ? Theme.green : bar.segments[index].free ? "white"
                 : bar.segments[index].systemColorIndex === 1 ? Theme.systemColor1
                 : bar.segments[index].systemColorIndex === 2 ? Theme.systemColor2 : Theme.systemColor3
             border.color: "black"
-            border.width: bar.segments[index].pond ? 0 : 1
+            border.width: bar.segments[index].isPlannedRoot ? 0 : 1
             clip: true
             Image {
                 anchors.fill: parent
-                visible: bar.animationMode === "erase" && bar.hatch && bar.segments[parent.index].pond
+                visible: bar.animationMode === "erase" && bar.hatch && bar.segments[parent.index].isPlannedRoot
                 source: "../assets/textures/storage-hatch.svg"
                 fillMode: Image.Tile
             }

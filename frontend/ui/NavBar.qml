@@ -105,7 +105,7 @@ Row {
                     sourceSize: Qt.size(38, 38)
                 }
             }
-            FText {
+            Label {
                 text: nav.label
                 color: Theme.onAccent
                 font: Theme.base

@@ -45,18 +45,18 @@ Item {
         // The controller validates and may replace this screen synchronously,
         // so the field to return to is chosen before advancing.
         const invalid = firstInvalidRow()
-        pond.advance()
+        controller.advance()
         if (invalid >= 0)
             activateRow(invalid)
     }
 
     function firstInvalidRow() {
-        return rows.findIndex(row => pond[row.error] !== "")
+        return rows.findIndex(row => controller[row.error] !== "")
     }
     function fieldCompleted(index) {
         const row = rows[index]
-        return pond[row.key] !== "" && (index === 1 || pond[row.error] === "")
-            && (index !== 2 || pond.passwordError === "")
+        return controller[row.key] !== "" && (index === 1 || controller[row.error] === "")
+            && (index !== 2 || controller.passwordError === "")
     }
 
     Title {
@@ -88,7 +88,7 @@ Item {
             onClicked: root.activateRow(index)
             Component.onCompleted: if (active) Qt.callLater(focusInput)
 
-            FText {
+            Label {
                 visible: input.text.length === 0
                 x: 15
                 y: Theme.capYBase(19)
@@ -106,7 +106,7 @@ Item {
                 width: 329
                 height: 48
                 verticalAlignment: TextInput.AlignVCenter
-                text: pond[root.rows[row.index].key]
+                text: controller[root.rows[row.index].key]
                 color: Theme.textWhite
                 font: Theme.base
                 echoMode: row.index === 1 || row.index === 2 ? TextInput.Password : TextInput.Normal
@@ -114,16 +114,16 @@ Item {
                                   | (row.index === 1 || row.index === 2 ? Qt.ImhSensitiveData : 0)
                 selectByMouse: true
                 Keys.forwardTo: root.shell ? [root.shell] : []
-                onTextEdited: pond[root.rows[row.index].key] = text
+                onTextEdited: controller[root.rows[row.index].key] = text
                 onActiveFocusChanged: if (activeFocus && root.activeRow !== row.index) root.activeRow = row.index
             }
         }
     }
 
     ErrorText {
-        visible: root.validationRequested && pond[root.rows[root.activeRow].error] !== ""
+        visible: root.validationRequested && controller[root.rows[root.activeRow].error] !== ""
         y: 727
-        text: pond[root.rows[root.activeRow].error]
+        text: controller[root.rows[root.activeRow].error]
     }
 
     NavBar {

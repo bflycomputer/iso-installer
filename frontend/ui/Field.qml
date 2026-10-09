@@ -30,7 +30,7 @@ Item {
         radius: 16
         color: field.active ? Theme.lavender : Theme.surface
 
-        FText {
+        Label {
             x: 20
             y: field.compactLabel ? 24 : 20
             lh: field.compactLabel ? 20 : 28

@@ -8,22 +8,22 @@ Window {
     visibility: Window.FullScreen
     color: "#1a1409"
     title: "Pond Installer"
-    onClosing: function(close) { close.accepted = !pond.busy }
+    onClosing: function(close) { close.accepted = !controller.busy }
 
-    readonly property bool bare: (pond.route === "Installing" || pond.route === "Finished")
+    readonly property bool standaloneScreen: (controller.route === "Installing" || controller.route === "Finished")
 
     Shell {
         anchors.fill: parent
-        visible: !window.bare
-        focus: !window.bare
-        screen: window.bare ? "" : "screens/" + pond.route + ".qml"
-        onBack: pond.back()
+        visible: !window.standaloneScreen
+        focus: !window.standaloneScreen
+        screen: window.standaloneScreen ? "" : "screens/" + controller.route + ".qml"
+        onBack: controller.back()
     }
 
     Loader {
         anchors.fill: parent
-        active: window.bare
-        source: active ? "screens/" + pond.route + ".qml" : ""
+        active: window.standaloneScreen
+        source: active ? "screens/" + controller.route + ".qml" : ""
         onLoaded: {
             item.forceActiveFocus()
         }

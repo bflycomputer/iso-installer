@@ -1,18 +1,18 @@
 singleton Theme Theme.qml
 PondLogo PondLogo.qml
 Shell Shell.qml
-FText FText.qml
+Label Label.qml
 NavBar NavBar.qml
-DecisionTree DecisionTree.qml
+ProgressTree ProgressTree.qml
 WifiSignal WifiSignal.qml
 ChoiceDropdown ChoiceDropdown.qml
-DriveArt DriveArt.qml
+DriveIllustration DriveIllustration.qml
 ChoiceBadge ChoiceBadge.qml
 StorageBar StorageBar.qml
 OptionTitle OptionTitle.qml
-DecisionCard DecisionCard.qml
+InstallOptionCard InstallOptionCard.qml
 EscapeHint EscapeHint.qml
 Field Field.qml
-HoldPill HoldPill.qml
+HoldButton HoldButton.qml
 Title Title.qml
 ErrorText ErrorText.qml

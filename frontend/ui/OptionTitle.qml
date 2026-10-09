@@ -14,7 +14,7 @@ Item {
         id: titleRow
         height: 28
         spacing: 4
-        FText {
+        Label {
             text: title.freeSpace ? "Install" : title.emptyDisk ? "Use this empty disk" : "Replace the contents of this disk"
             color: title.active ? "black" : Theme.textWhite
             font: Theme.lg
@@ -31,7 +31,7 @@ Item {
                 radius: 4
                 color: Theme.systemPond
             }
-            FText {
+            Label {
                 id: tag
                 x: 4
                 y: 4
@@ -41,7 +41,7 @@ Item {
                 lh: Theme.lhDisplaySm
             }
         }
-        FText {
+        Label {
             visible: title.freeSpace
             text: "in unallocated space"
             color: title.active ? "black" : Theme.textWhite

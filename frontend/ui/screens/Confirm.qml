@@ -8,17 +8,17 @@ Item {
     id: root
     anchors.fill: parent
 
-    property bool showDecisionTree: false
+    property bool showProgressTree: false
     readonly property int rowCount: 0
 
-    readonly property var option: pond.installOptions[pond.selectedInstallOption] || ({})
-    readonly property var drive: pond.selectedDriveData
+    readonly property var option: controller.installOptions[controller.selectedInstallOption] || ({})
+    readonly property var drive: controller.selectedDriveData
     readonly property real driveBytes: Number(drive.capacityBytes || 0)
-    readonly property real pondBytes: Number(option.pondBytes || 0)
+    readonly property real rootBytes: Number(option.rootBytes || 0)
     function capacityLabel() { return String(option.capacity || "") }
 
-    function beginAccept() { startPill.begin() }
-    function endAccept() { startPill.end() }
+    function beginAccept() { startButton.begin() }
+    function endAccept() { startButton.end() }
 
     Title {
         y: 195
@@ -43,14 +43,14 @@ Item {
                 width: 160
                 height: 97
 
-                FText {
+                Label {
                     y: 18
                     text: parent.modelData.label
                     color: Theme.textWhite
                     font: Theme.lg
                     lh: Theme.lhLg
                 }
-                FText {
+                Label {
                     y: Theme.capYBase(54)
                     width: 155
                     elide: Text.ElideRight
@@ -65,9 +65,9 @@ Item {
 
     Summary {
         y: 291
-        rows: [{ label: "Language", value: pond.languageLabel },
-               { label: "Keyboard", value: pond.keyboardLabel },
-               { label: "Region", value: pond.regionLabel }]
+        rows: [{ label: "Language", value: controller.languageLabel },
+               { label: "Keyboard", value: controller.keyboardLabel },
+               { label: "Region", value: controller.regionLabel }]
     }
 
     Rectangle {
@@ -82,7 +82,7 @@ Item {
             x: 24
             y: 32
             width: 430
-            freeSpace: root.option.type === "empty"
+            freeSpace: root.option.mode === "free-space"
             emptyDisk: Boolean(root.drive.empty)
         }
         StorageBar {
@@ -90,7 +90,7 @@ Item {
             y: 26
             segments: root.option.plannedSegments || []
         }
-        FText {
+        Label {
             x: 24; y: 65; width: 430
             text: (root.drive.name || "") + " · " + (root.drive.path || "")
             elide: Text.ElideRight
@@ -107,7 +107,7 @@ Item {
         radius: 12
         color: Theme.surface
 
-        FText {
+        Label {
             x: 24
             y: 38
             text: root.capacityLabel() + " for Pond"
@@ -125,7 +125,7 @@ Item {
             border.color: Theme.lavender
 
             Rectangle {
-                width: parent.width * (root.driveBytes > 0 ? Math.max(0, Math.min(1, root.pondBytes / root.driveBytes)) : 0)
+                width: parent.width * (root.driveBytes > 0 ? Math.max(0, Math.min(1, root.rootBytes / root.driveBytes)) : 0)
                 height: parent.height
                 color: Theme.green
             }
@@ -134,27 +134,27 @@ Item {
 
     Summary {
         y: 637
-        rows: [{ label: "Username", value: pond.username },
-               { label: "Computer", value: pond.hostname },
-               { label: "Network", value: !pond.wifi.networkConnected ? "Offline"
-                   : (pond.wifi.activeSsid.length > 0 ? pond.wifi.activeSsid
+        rows: [{ label: "Username", value: controller.username },
+               { label: "Computer", value: controller.hostname },
+               { label: "Network", value: !controller.wifi.networkConnected ? "Offline"
+                   : (controller.wifi.activeSsid.length > 0 ? controller.wifi.activeSsid
                       : "Wired") }]
     }
 
-    HoldPill {
-        id: startPill
+    HoldButton {
+        id: startButton
         x: 744
         y: 774
         label: "Start install"
         onCompleted: {
-            pond.beginInstallation()
-            if (pond.errorMessage !== "") {
+            controller.beginInstallation()
+            if (controller.errorMessage !== "") {
                 progress = 0
             }
         }
     }
 
-    FText {
+    Label {
         y: Theme.capYXs(853)
         anchors.horizontalCenter: parent.horizontalCenter
         text: "Hold for 3s"
@@ -169,6 +169,6 @@ Item {
     }
 
     EscapeHint {
-        onActivated: pond.back()
+        onActivated: controller.back()
     }
 }
