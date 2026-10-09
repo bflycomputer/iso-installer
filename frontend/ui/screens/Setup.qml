@@ -119,9 +119,6 @@ Item {
         controller.selectSetupChoice(activeRow, index)
     }
 
-    // Type-ahead inside an open dropdown. Exact matches win, then prefixes,
-    // then substrings; for keyboards, variants of the current layout are
-    // searched first so "dvorak" from English (US) stays English (US).
     function handleTextInput(text) {
         if (!dropdownOpen || !text || text.length !== 1)
             return false
@@ -131,9 +128,8 @@ Item {
         const values = choices(activeRow)
         const ignored = activeRow === 2 ? /[^a-z0-9+-]+/g : /[^a-z0-9]+/g
         const query = typeAhead.replace(ignored, "")
-        const currentLayout = activeRow === 1 ? String(controller.keyboardLayout || "") : ""
         function rank(item) {
-            const fields = [item.label, item.detail, item.value, item.variant, item.search]
+            const fields = [item.label, item.detail, item.value, item.search]
             let combined = ""
             for (let f = 0; f < fields.length; ++f) {
                 const field = String(fields[f] || "").toLocaleLowerCase().replace(ignored, "")
@@ -151,10 +147,9 @@ Item {
             const match = rank(values[i])
             if (match < 0)
                 continue
-            const priority = match * 2 + (activeRow === 1 && String(values[i].value || "") !== currentLayout ? 1 : 0)
-            if (priority < bestRank) {
+            if (match < bestRank) {
                 best = i
-                bestRank = priority
+                bestRank = match
             }
         }
         if (best >= 0) {

@@ -24,6 +24,7 @@ Rectangle {
     }
 
     PondLogo {
+        failed: root.failed
         scale: root.designScale
         transformOrigin: Item.Top
         anchors.top: parent.top

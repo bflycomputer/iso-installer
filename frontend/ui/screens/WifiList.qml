@@ -22,18 +22,11 @@ Item {
         controller.selectedNetwork = rowCount > 0 ? activeRow : -1
         controller.advance()
     }
-    function handleTextInput(text) {
-        if (text.toLowerCase() === "c" && controller.wifi.networkConnected) {
-            controller.continueConnected()
-            return true
-        }
-        return false
-    }
 
     Title {
         y: 310
         anchors.horizontalCenter: parent.horizontalCenter
-        text: "Connect to Wi-Fi"
+        text: "Connect to Wifi"
     }
 
     Rectangle {
@@ -145,20 +138,8 @@ Item {
     NavBar {
         y: 726
         anchors.horizontalCenter: parent.horizontalCenter
-        label: root.rowCount > 0 ? "Select Wi-Fi" : "Continue"
+        label: "Select Wifi"
         chevronWidth: 104
     }
 
-    Label {
-        visible: controller.wifi.networkConnected && root.rowCount > 0
-        y: 654
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: "C   Continue with current connection"
-        color: Theme.lavender; font: Theme.sm; lh: Theme.lhSm
-        MouseArea {
-            anchors.fill: parent; anchors.margins: -12
-            cursorShape: Qt.PointingHandCursor
-            onClicked: controller.continueConnected()
-        }
-    }
 }

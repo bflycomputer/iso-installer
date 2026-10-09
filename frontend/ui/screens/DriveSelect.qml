@@ -122,7 +122,7 @@ Item {
                            ? [{ label: "Storage:", value: item.capacity, y: 144 },
                               { label: "Available:", value: item.available, y: 165 }]
                            : [{ label: "Storage:", value: item.capacity, y: 123 },
-                              { label: "Allocated:", value: item.used, y: 144 },
+                              { label: "Used:", value: item.used, y: 144 },
                               { label: "Available:", value: item.available, y: 165 }]
 
                     Item {
@@ -240,19 +240,6 @@ Item {
 
     ErrorText {
         y: root.scrollMode ? 956 : 746
-    }
-
-    Label {
-        z: 4
-        y: root.scrollMode ? 996 : 850
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: !controller.storageReady ? "Reading disks…" : "Refresh disks"
-        color: Theme.lavender; font: Theme.sm; lh: Theme.lhSm
-        MouseArea {
-            anchors.fill: parent; anchors.margins: -10
-            cursorShape: Qt.PointingHandCursor
-            onClicked: controller.refreshDisks()
-        }
     }
 
     NavBar {

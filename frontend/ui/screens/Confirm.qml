@@ -90,13 +90,6 @@ Item {
             y: 26
             segments: root.option.plannedSegments || []
         }
-        Label {
-            x: 24; y: 65; width: 430
-            text: (root.drive.name || "") + " · " + (root.drive.path || "")
-            elide: Text.ElideRight
-            color: Theme.textWhite; opacity: 0.7
-            font: Theme.xs; lh: Theme.lhXs
-        }
     }
 
     Rectangle {
@@ -110,7 +103,7 @@ Item {
         Label {
             x: 24
             y: 38
-            text: root.capacityLabel() + " for Pond"
+            text: root.capacityLabel()
             color: Theme.textWhite
             font: Theme.lg
             lh: Theme.lhLg

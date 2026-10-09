@@ -70,9 +70,10 @@ def _validate_esp(plan, mount):
         run(["umount", str(mount)])
 
 
-def _execute(plan, profile, archive):
+def _execute(plan, profile, archive, progress):
     _preflight(plan)
     system.verify_rootfs(archive)
+    progress(0.60)
     os.unshare(os.CLONE_NEWNS)
     run(["mount", "--make-rprivate", "/"])
     target = Path(tempfile.mkdtemp(prefix="pond-target-", dir="/mnt"))
@@ -88,7 +89,7 @@ def _execute(plan, profile, archive):
         esp, root = storage.create_partitions(plan, created)
         storage.current_partition(plan.disk, root)
         system.mount_root(root, target)
-        system.provision(target, root, esp, archive, profile)
+        system.provision(target, root, esp, archive, profile, progress)
         # Update the ESP only after configuring the target system.
         storage.current_partition(plan.disk, esp)
         if plan.esp is None:
@@ -128,6 +129,7 @@ def _execute(plan, profile, archive):
         if run(["efibootmgr", "--bootnext", entry], check=False).returncode:
             warnings.append("One-time boot selection failed; the persistent Pond entry is installed")
         committed = True
+        progress(0.99)
     finally:
         # Cleanup must finish even if cancellation arrives after another error.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -168,7 +170,7 @@ def _execute(plan, profile, archive):
     return Installed(entry, tuple(warnings))
 
 
-def install(plan: Plan, profile: Profile, archive: Path) -> Installed:
+def install(plan: Plan, profile: Profile, archive: Path, progress=lambda value: None) -> Installed:
     """Install in the dedicated child process, with a private mount namespace.
 
     The caller owns archive acquisition and must keep its contents unchanged
@@ -183,4 +185,4 @@ def install(plan: Plan, profile: Profile, archive: Path) -> Installed:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise InstallError("Another Pond installation is in progress") from error
-        return _execute(plan, profile, archive)
+        return _execute(plan, profile, archive, progress)

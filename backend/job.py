@@ -1,6 +1,7 @@
 """Run the installation without forking the Qt application or blocking its event loop."""
 import json
 import os
+import re
 import signal
 import sys
 
@@ -10,19 +11,20 @@ from .worker import request
 
 
 class InstallJob(QObject):
-    statusChanged = Signal(str)
+    progressChanged = Signal(float)
     completed = Signal(bool, str, list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self._read)
-        self.process.readyReadStandardError.connect(lambda: self.process.readAllStandardError())
+        self.process.readyReadStandardError.connect(self._download_progress)
         self.process.errorOccurred.connect(self._error)
         self.process.finished.connect(self._finished)
         self.process.started.connect(self._started)
         self._result = None
         self._cancelled = False
+        self._download = ''
 
     def start(self, plan, profile):
         self._result = None
@@ -35,14 +37,23 @@ class InstallJob(QObject):
         while self.process.canReadLine():
             try:
                 event = json.loads(bytes(self.process.readLine()))
-                if event['type'] == 'status' and not self._cancelled:
-                    self.statusChanged.emit(event['message'])
+                if event['type'] == 'progress' and not self._cancelled:
+                    self.progressChanged.emit(float(event['value']))
                 elif event['type'] == 'done':
                     self._result = (True, '', event.get('warnings', []))
                 elif event['type'] == 'error':
                     self._result = (False, event['message'], [])
             except (ValueError, KeyError, TypeError):
                 self._result = (False, 'The installation process returned an invalid response.', [])
+
+    def _download_progress(self):
+        self._download += bytes(self.process.readAllStandardError()).decode(errors='replace')
+        lines = self._download.replace('\r', '\n').split('\n')
+        self._download = lines.pop()[-256:]
+        for line in lines:
+            match = re.search(r'(\d+(?:\.\d+)?)%\s*$', line)
+            if match and not self._cancelled:
+                self.progressChanged.emit(0.04 + 0.56 * float(match[1]) / 100)
 
     def _error(self, error):
         if error == QProcess.FailedToStart:

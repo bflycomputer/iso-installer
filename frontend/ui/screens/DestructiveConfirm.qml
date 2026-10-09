@@ -45,8 +45,8 @@ Item {
             width: 438
             wrapMode: Text.WordWrap
             text: root.option.preservesEfi
-                  ? "The EFI partition will be kept. All other partitions and their files on " + root.drive.path + " will be permanently erased."
-                  : "All partitions and files on " + root.drive.path + " will be permanently erased."
+                  ? "The EFI partition will be kept. All other partitions and their files will be permanently erased."
+                  : "All partitions and files on this disk will be permanently erased."
             color: Theme.textWhite
             opacity: 0.7
             font: Theme.smR
@@ -76,7 +76,7 @@ Item {
                 y: Theme.capYBaseR(53)
                 width: 380
                 elide: Text.ElideRight
-                text: (root.drive.capacity || "Unknown") + " Storage • " + (root.drive.used || "Unknown") + " allocated"
+                text: (root.drive.capacity || "Unknown") + " Storage • " + (root.drive.used || "Unknown") + " in use"
                 color: Theme.textWhite
                 opacity: 0.6
                 font: Theme.baseR

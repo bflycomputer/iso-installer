@@ -7,10 +7,7 @@ Rectangle {
     id: button
 
     property string label: ""
-    property bool busy: false
-    property string busyLabel: ""
     property real progress: 0
-    property int holdMs: 3000
     signal completed
 
     width: 240
@@ -20,14 +17,14 @@ Rectangle {
     clip: true
 
     function begin() {
-        if (busy || hold.running)
+        if (hold.running)
             return
         progress = 0
         hold.restart()
     }
 
     function end() {
-        if (!busy && hold.running) {
+        if (hold.running) {
             hold.stop()
             progress = 0
         }
@@ -39,7 +36,7 @@ Rectangle {
         property: "progress"
         from: 0
         to: 1
-        duration: button.holdMs
+        duration: 3000
         onFinished: button.completed()
     }
 
@@ -71,7 +68,7 @@ Rectangle {
             sourceSize: Qt.size(40, 40)
         }
         Label {
-            text: button.busy ? button.busyLabel : button.label
+            text: button.label
             color: Theme.onAccent
             font: Theme.base
             lh: Theme.lhBase

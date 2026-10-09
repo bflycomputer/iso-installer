@@ -4,6 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
+import sys
 import tempfile
 
 from .command import identifier, run
@@ -26,7 +28,7 @@ def fetch_rootfs(directory: Path) -> Path:
         path = Path(out.name)
         try:
             run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
-                 "--retry-all-errors", "--output", str(path), ROOTFS_URL])
+                 "--retry-all-errors", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
         except BaseException:
             path.unlink(missing_ok=True)
             raise
@@ -58,7 +60,7 @@ def mount_root(root, target):
     (target / ".snapshots").chmod(0o750)
 
 
-def configure_hardware(target):
+def configure_hardware(target, progress=lambda value: None):
     prefix = ["arch-chroot", str(target)]
     # Refresh and upgrade the rootfs before installing hardware packages.
     for args in (["pacman", "-Sy"], ["pacman", "-Su", "--noconfirm", "--disable-download-timeout"]):
@@ -69,12 +71,14 @@ def configure_hardware(target):
         else:
             raise InstallError(f"pacman failed (exit {result.returncode})")
     run(prefix + ["chwd", "--autoconfigure"])
+    progress(0.90)
     run(prefix + ["bash", "-c", "sed -i '/^HOOKS=/ { /[ (]autodetect[ )]/! s/ systemd / systemd autodetect /; }' /etc/mkinitcpio.conf.d/*pond.conf"])
     run(prefix + ["mkinitcpio", "-P"])
 
 
-def provision(target, root, esp, archive, profile):
+def provision(target, root, esp, archive, profile, progress=lambda value: None):
     run(["bsdtar", "--numeric-owner", "--acls", "--xattrs", "-xpf", str(archive), "-C", str(target)])
+    progress(0.78)
     (target / "boot/efi").mkdir(parents=True, exist_ok=True)
     root_uuid = identifier(["blkid", "-s", "UUID", "-o", "value", root.path])
     (target / "etc/fstab").write_text(fstab(root_uuid, esp.uuid))
@@ -83,7 +87,13 @@ def provision(target, root, esp, archive, profile):
         f"IFS= read -r POND_{name}" for name in ("USERNAME", "PASSWORD", "TIMEZONE", "HOSTNAME")) + "\n"
     run(prefix + ["bash", "-c", read_profile + (ASSETS / "configure.sh").read_text()], input=profile.credentials())
     run(prefix + ["python", "-c", (ASSETS / "apply-settings.py").read_text()], input=json.dumps(profile.settings()))
-    configure_hardware(target)
+    network = target / "etc/NetworkManager/system-connections"
+    network.mkdir(parents=True, exist_ok=True, mode=0o700)
+    for connection in Path("/etc/NetworkManager/system-connections").glob("*.nmconnection"):
+        shutil.copy2(connection, network / connection.name)
+    progress(0.82)
+    configure_hardware(target, progress)
+    progress(0.95)
     stub = target / "root/pond-grub-stub.cfg"
     stub.write_text(
         "insmod part_gpt\n"

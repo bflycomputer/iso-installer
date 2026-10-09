@@ -36,8 +36,7 @@ Rectangle {
     readonly property int branchDepth: branchDepthForRoute(routeName)
     readonly property var decisionChoices: completedChoices()
     readonly property int currentDecisionChoice: currentChoiceForRoute(routeName)
-    readonly property bool includeSize: includeSizeForRoute(routeName)
-    readonly property bool includeProfile: ["Allocation", "DestructiveConfirm", "Profile", "Confirm"]
+    readonly property bool includeProfile: ["DestructiveConfirm", "Profile", "Confirm"]
                                                .indexOf(routeName) >= 0
     readonly property int profileCompleted: routeName === "Confirm" ? 4
         : (routeName === "Profile" && sceneLoader.item && sceneLoader.item.completedCount !== undefined
@@ -226,7 +225,6 @@ Rectangle {
         case "DriveSelect": return "decision1"
         case "DiskUse": return "decision2"
         case "DestructiveConfirm": return "decision3"
-        case "Allocation": return "size"
         case "Profile":
         case "Confirm": return "profile"
         default: return "language"
@@ -267,10 +265,6 @@ Rectangle {
         return 1
     }
 
-    function includeSizeForRoute(route) {
-        return route === "Allocation" || ((route === "Profile" || route === "Confirm") && visited("Allocation"))
-    }
-
     Item {
         width: Theme.canvasW
         height: Theme.canvasH
@@ -300,7 +294,6 @@ Rectangle {
             decisionChoices: shell.decisionChoices
             branchDepth: shell.branchDepth
             currentDecisionChoice: shell.currentDecisionChoice
-            includeSize: shell.includeSize
             includeProfile: shell.includeProfile
             profileCompleted: shell.profileCompleted
             profileActive: shell.profileActive

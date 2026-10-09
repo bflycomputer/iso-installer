@@ -76,7 +76,7 @@ Item {
     Title {
         y: 310
         anchors.horizontalCenter: parent.horizontalCenter
-        text: "Connect to Wi-Fi"
+        text: "Connect to Wifi"
     }
 
     Rectangle {

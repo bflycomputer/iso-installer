@@ -8,7 +8,6 @@ Window {
     visibility: Window.FullScreen
     color: "#1a1409"
     title: "Pond Installer"
-    onClosing: function(close) { close.accepted = !controller.busy }
 
     readonly property bool standaloneScreen: (controller.route === "Installing" || controller.route === "Finished")
 

@@ -15,7 +15,6 @@ Item {
     property int branchDepth: 0
 
     // Downstream stages only appear once the chosen branch makes them known.
-    property bool includeSize: false
     property bool includeProfile: false
 
     // Profile fields are ordered TL, TR, BR, BL. profileCompleted is a count;
@@ -30,15 +29,11 @@ Item {
 
     readonly property int activeDecision: decisionIndexForStage(stage)
     readonly property int visibleDecisionCount: branchDepth
-    readonly property bool sizeVisible: includeSize || stage === "size"
-    readonly property bool profileVisible: includeProfile || sizeVisible
-                                                     || stage === "profile"
+    readonly property bool profileVisible: includeProfile || stage === "profile"
     readonly property bool compactHeader: visibleDecisionCount === 1
-                                               && !sizeVisible && !profileVisible
+                                               && !profileVisible
     readonly property int baseX: compactHeader ? 32 : 0
     readonly property int contentHeight: {
-        if (sizeVisible)
-            return Math.max(210, profileVisible ? profileY + 30 : sizeY + 19)
         if (profileVisible)
             return Math.max(150, profileY + 30)
         return Math.max(150, decisionTop(visibleDecisionCount - 1)
@@ -53,12 +48,7 @@ Item {
     readonly property int languageX: baseX + 61
     readonly property int wifiX: baseX + 105
     readonly property int decisionOneX: baseX + 148
-    readonly property int sizeY: visibleDecisionCount <= 1 ? 37
-                                : visibleDecisionCount === 2 ? 99
-                                : 147
     readonly property int profileY: {
-        if (sizeVisible)
-            return sizeY + 33
         if (visibleDecisionCount <= 1)
             return 37
         if (visibleDecisionCount === 2)
@@ -94,17 +84,10 @@ Item {
     function decisionState(index) {
         if (activeDecision === index)
             return "active"
-        if (activeDecision > index || stage === "size"
-                || stage === "profile"
+        if (activeDecision > index || stage === "profile"
                 || (decisionChoices && decisionChoices.length > index))
             return "completed"
         return "idle"
-    }
-
-    function sizeState() {
-        if (stage === "size")
-            return "active"
-        return stage === "profile" ? "completed" : "idle"
     }
 
     function profileState() {
@@ -148,15 +131,6 @@ Item {
         if (state === "completed")
             return "../assets/progress/wifi-completed.svg"
         return "../assets/progress/wifi-idle.svg"
-    }
-
-    function sizeAsset() {
-        const state = sizeState()
-        if (state === "active")
-            return "../assets/progress/size-active.svg"
-        if (state === "completed")
-            return "../assets/progress/size-completed.svg"
-        return "../assets/progress/size-idle.svg"
     }
 
     function profileAssetForCount(count) {
@@ -378,7 +352,7 @@ Item {
     }
 
     Rectangle {
-        visible: tree.visibleDecisionCount >= 3 || tree.sizeVisible
+        visible: tree.visibleDecisionCount >= 3
                          || (tree.profileVisible && tree.visibleDecisionCount >= 2)
         x: 192
         y: 82
@@ -386,34 +360,13 @@ Item {
         height: 14
         color: tree.stateColor(tree.visibleDecisionCount >= 3
                                ? tree.decisionState(2)
-                               : tree.sizeVisible ? tree.sizeState()
-                                                  : tree.profileState())
+                               : tree.profileState())
     }
 
     Rectangle {
-        visible: tree.sizeVisible
-                         || (tree.profileVisible && tree.visibleDecisionCount >= 3)
+        visible: tree.profileVisible && tree.visibleDecisionCount >= 3
         x: 192
         y: 130
-        width: 1
-        height: 14
-        color: tree.stateColor(tree.sizeVisible ? tree.sizeState() : tree.profileState())
-    }
-
-    Image {
-        visible: tree.sizeVisible
-        x: 179
-        y: tree.sizeY
-        width: 28
-        height: 19
-        source: tree.sizeAsset()
-        sourceSize: Qt.size(56, 38)
-    }
-
-    Rectangle {
-        visible: tree.profileVisible && tree.sizeVisible
-        x: 192
-        y: tree.profileY - 10
         width: 1
         height: 14
         color: tree.stateColor(tree.profileState())

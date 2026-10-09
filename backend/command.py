@@ -8,11 +8,11 @@ import subprocess
 from .model import InstallError
 
 
-def run(argv, *, input=None, check=True):
+def run(argv, *, input=None, check=True, stderr=subprocess.PIPE):
     # Firmware labels need not be UTF-8. Only display text may be replaced;
     # persistent identifiers are checked separately before they are used.
     with subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE, text=True, errors="replace",
+                          stderr=stderr, text=True, errors="replace",
                           start_new_session=True) as process:
         try:
             stdout, stderr = process.communicate(input)

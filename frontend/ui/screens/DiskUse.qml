@@ -57,7 +57,7 @@ Item {
             id: driveDetails
             x: 14
             y: Theme.capYSm(34)
-            text: root.drive ? root.drive.detail + " • " + root.drive.capacity + " • " + root.drive.used + " allocated" : ""
+            text: root.drive ? root.drive.detail + " • " + root.drive.capacity + " • " + root.drive.used + " used" : ""
             color: Theme.lavender
             opacity: 0.7
             font: Theme.sm

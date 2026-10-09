@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import backend
-from backend.model import ESP_TYPE, Partition, ROOT_TYPE, gaps
+from backend.model import ESP_TYPE, Partition, ROOT_TYPE, gaps, max_allocation_gib
 
 
 def size_label(value):
@@ -30,14 +30,14 @@ def drive_row(disk):
         name = (Path('/sys/class/block') / Path(disk.path).name / 'device/model').read_text().strip()
     except OSError:
         name = ''
-    return {'name': name or Path(disk.path).name, 'path': disk.path,
-            'detail': f'{disk.path} · {len(disk.partitions)} partitions' if disk.partitions else f'{disk.path} · Empty',
+    return {'name': name or Path(disk.path).name,
+            'detail': f'{len(disk.partitions)} partitions' if disk.partitions else 'Empty',
             'capacity': size_label(disk.size), 'used': size_label(used),
             'available': size_label(max(0, disk.size - used)),
             'capacityBytes': disk.size, 'usedBytes': used, 'empty': not disk.partitions}
 
 
-def options(disk, allocation):
+def options(disk):
     if disk is None:
         return []
     choices = []
@@ -45,7 +45,7 @@ def options(disk, allocation):
         if mode is backend.Mode.FREE_SPACE and not disk.partitions:
             continue
         try:
-            plan = backend.plan_install(disk, mode, allocation if mode is backend.Mode.FREE_SPACE else None)
+            plan = backend.plan_install(disk, mode, max_allocation_gib(disk) if mode is backend.Mode.FREE_SPACE else None)
         except backend.InstallError:
             continue
         parts = list(disk.partitions if mode is backend.Mode.FREE_SPACE else ([plan.esp] if plan.esp else []))
@@ -54,7 +54,7 @@ def options(disk, allocation):
         parts.append(Partition('planned-root', 0, '', ROOT_TYPE, plan.root_start, plan.root_size, 'btrfs'))
         free = mode is backend.Mode.FREE_SPACE
         choices.append({'mode': mode.value, 'plan': plan,
-                        'detail': 'Keep existing partitions and choose space for Pond.' if free else
+                        'detail': 'Keep existing partitions and use the available free space for Pond.' if free else
                                   'Keep EFI; erase all other partitions.' if plan.esp else
                                   'Erase all partitions.',
                         'rootBytes': plan.root_size, 'capacity': size_label(plan.root_size),

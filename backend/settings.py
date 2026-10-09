@@ -66,8 +66,7 @@ def keyboards(path="/usr/share/X11/xkb/rules/evdev.xml"):
     for layout in ET.parse(path).iterfind("layoutList/layout"):
         name = layout.findtext("configItem/name")
         if name != "custom":
-            items.append({"label": layout.findtext("configItem/description"), "value": name,
-                          "variant": "", "detail": ""})
+            items.append({"label": layout.findtext("configItem/description"), "value": name})
     return sorted(items, key=lambda item: item["label"].casefold())
 
 

@@ -1,41 +1,22 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Window
 import ".."
 
-// Installation status with an indeterminate activity animation.
 Rectangle {
     id: root
-
-    readonly property string status: String(controller.status)
 
     // Names the machine being installed onto; the design shows up to four
     // words as coloured tags.
     readonly property string deviceName: controller.deviceName ? String(controller.deviceName) : "Pond"
 
     color: "#1a1409"
-    focus: true
-    Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (!event.isAutoRepeat) cancelButton.begin()
-            event.accepted = true
-        }
-    }
-    Keys.onReleased: function(event) {
-        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (!event.isAutoRepeat) cancelButton.end()
-            event.accepted = true
-        }
-    }
-    Connections {
-        target: root.Window.window
-        function onActiveChanged() { if (!target.active) cancelButton.end() }
-    }
 
     readonly property real designScale: Math.min(width / 1728, height / 1117)
     property int tick: 0
-    readonly property int activeBlock: Math.floor(tick / 6) % 10
+    readonly property real progress: Math.max(0, Math.min(1, controller.progress))
+    readonly property int filledBlocks: Math.floor(progress * 10)
+    property int completedCount: 0
 
     readonly property var words: {
         const parts = String(deviceName).trim().split(/\s+/)
@@ -84,6 +65,13 @@ Rectangle {
         onTriggered: root.tick += 1
     }
 
+    Timer {
+        interval: 150
+        running: root.progress >= 1 && root.completedCount < 10
+        repeat: true
+        onTriggered: root.completedCount += 1
+    }
+
     Item {
         width: 1728
         height: 1117
@@ -107,7 +95,10 @@ Rectangle {
                     height: 80
                     clip: true
 
-                    readonly property bool active: index === root.activeBlock
+                    readonly property string blockState: root.progress >= 1
+                        ? (index < root.completedCount ? "complete" : "filled")
+                        : (index < root.filledBlocks ? "filled"
+                           : index === root.filledBlocks ? "active" : "empty")
 
                     // One 1 px separator between cells: every cell but the
                     // last lets the clip swallow its bottom edge.
@@ -117,12 +108,23 @@ Rectangle {
                         color: "transparent"
                         border.width: 1
                         border.color: "#cba6f7"
-                        visible: !block.active
+                        visible: block.blockState === "empty"
+                    }
+
+                    Image {
+                        x: -0.5
+                        y: -0.5
+                        width: 81
+                        height: 81
+                        visible: block.blockState === "filled" || block.blockState === "complete"
+                        source: block.blockState === "complete"
+                                ? "../../assets/animations/complete.svg" : "../../assets/animations/filled.svg"
+                        sourceSize: Qt.size(162, 162)
                     }
 
                     Item {
                         anchors.fill: parent
-                        visible: block.active
+                        visible: block.blockState === "active"
                         clip: true
 
                         readonly property int animation: (block.index % 5) + 1
@@ -215,7 +217,7 @@ Rectangle {
             width: 396
             height: 54
 
-            readonly property var labels: ["Installing", "Pond", "·", "·"]
+            readonly property var labels: ["Installing", "Pond", String(Math.round(root.progress * 100)), "%"]
             readonly property var offsets: [0, 162.576, 288, 341.578]
             readonly property var widths: [113, 75, 54, 54]
 
@@ -298,32 +300,6 @@ Rectangle {
             font.pixelSize: 11
             font.weight: Font.Medium
             font.letterSpacing: 0.11
-        }
-        Label {
-            y: 978
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 700
-            horizontalAlignment: Text.AlignHCenter
-            text: root.status
-            color: Theme.textCream
-            font: Theme.base
-            lh: Theme.lhBase
-        }
-        HoldButton {
-            id: cancelButton
-            x: 744; y: 1020
-            label: "Cancel install"
-            busyLabel: "Cleaning up…"
-            busy: root.status === "Cancelling and cleaning up…"
-            onCompleted: controller.cancelInstallation()
-        }
-
-        Label {
-            y: 1092
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "Hold for 3s"
-            color: Theme.textCream; opacity: 0.5
-            font: Theme.xs; lh: Theme.lhXs
         }
     }
 }
