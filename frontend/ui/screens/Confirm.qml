@@ -67,7 +67,7 @@ Item {
         y: 291
         rows: [{ label: "Language", value: controller.languageLabel },
                { label: "Keyboard", value: controller.keyboardLabel },
-               { label: "Region", value: controller.regionLabel }]
+               { label: "Timezone", value: controller.timezoneLabel }]
     }
 
     Rectangle {

@@ -79,7 +79,7 @@ Item {
                     y: Theme.capYSm(15.5)
                     width: parent.width - 24
                     text: choiceRow.modelData.detail
-                          ? choiceRow.modelData.label + "  ·  " + choiceRow.modelData.detail
+                          ? choiceRow.modelData.detail + "  ·  " + choiceRow.modelData.label
                           : choiceRow.modelData.label
                     elide: Text.ElideRight
                     color: choiceRow.highlighted ? "#000000" : Theme.textWhite

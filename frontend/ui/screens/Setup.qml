@@ -13,22 +13,22 @@ Item {
     property int highlightedChoice: -1
     property string typeAhead: ""
 
-    readonly property var labels: ["Language", "Keyboard", "Region"]
+    readonly property var labels: ["Language", "Keyboard", "Timezone"]
 
     // The controller hands the long lists over as JSON: indexing a Python-backed
     // list from QML re-converts the whole list on every access, which made
     // type-ahead over 600 keyboard layouts take seconds per keystroke.
     readonly property var languageChoices: JSON.parse(controller.languageChoices)
     readonly property var keyboardChoices: JSON.parse(controller.keyboardChoices)
-    readonly property var regionChoices: JSON.parse(controller.regionChoices)
+    readonly property var timezoneChoices: JSON.parse(controller.timezoneChoices)
 
     function choices(row) {
-        return row === 0 ? languageChoices : row === 1 ? keyboardChoices : regionChoices
+        return row === 0 ? languageChoices : row === 1 ? keyboardChoices : timezoneChoices
     }
 
     function currentValue(row) {
         return row === 0 ? controller.languageLabel
-             : row === 1 ? controller.keyboardLabel : controller.regionLabel
+             : row === 1 ? controller.keyboardLabel : controller.timezoneLabel
     }
 
     function openDropdown(row) {
@@ -54,8 +54,6 @@ Item {
             openDropdown(activeRow)
     }
 
-    // Committing a choice moves to the next field; committing Region lands
-    // on Continue.
     function selectChoice(index) {
         if (index < 0 || index >= choices(activeRow).length)
             return
@@ -131,13 +129,14 @@ Item {
         typeAheadReset.restart()
 
         const values = choices(activeRow)
-        const query = typeAhead.replace(/[^a-z0-9]+/g, "")
+        const ignored = activeRow === 2 ? /[^a-z0-9+-]+/g : /[^a-z0-9]+/g
+        const query = typeAhead.replace(ignored, "")
         const currentLayout = activeRow === 1 ? String(controller.keyboardLayout || "") : ""
         function rank(item) {
-            const fields = [item.label, item.detail, item.value, item.variant]
+            const fields = [item.label, item.detail, item.value, item.variant, item.search]
             let combined = ""
             for (let f = 0; f < fields.length; ++f) {
-                const field = String(fields[f] || "").toLocaleLowerCase().replace(/[^a-z0-9]+/g, "")
+                const field = String(fields[f] || "").toLocaleLowerCase().replace(ignored, "")
                 combined += field
                 if (field === query)
                     return 0
@@ -174,7 +173,7 @@ Item {
     Title {
         x: 736
         y: 310
-        text: "Language & region"
+        text: "Language & timezone"
     }
 
     Repeater {
