@@ -1,9 +1,8 @@
-"""Synchronous installation in a private worker; no application entrypoint."""
+"""Synchronous installation for the dedicated installation process."""
 
 from contextlib import suppress
 from dataclasses import dataclass
 import fcntl
-import multiprocessing
 import os
 from pathlib import Path
 import re
@@ -132,6 +131,7 @@ def _execute(plan, profile, archive):
     finally:
         # Cleanup must finish even if cancellation arrives after another error.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
         def cleanup_command(argv):
             try:
@@ -168,34 +168,8 @@ def _execute(plan, profile, archive):
     return Installed(entry, tuple(warnings))
 
 
-def _worker(connection, plan, profile, archive):
-    def cancel(signum, frame):
-        # Accept cancellation once; further signals must not abort unwinding.
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        raise KeyboardInterrupt
-
-    signal.signal(signal.SIGINT, cancel)
-    os.setsid()  # The caller forwards cancellation; terminal SIGINT stays there.
-    try:
-        fd = os.open("/run/pond-installer.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-        with os.fdopen(fd, "w") as lock:
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError as error:
-                raise InstallError("Another Pond installation is in progress") from error
-            result = _execute(plan, profile, archive)
-        connection.send((True, result))
-    except BaseException as error:
-        # Unexpected library exceptions may contain input data; expose only
-        # explicitly controlled installation errors across the process seam.
-        message = str(error) if isinstance(error, InstallError) else type(error).__name__
-        connection.send((False, message))
-    finally:
-        connection.close()
-
-
 def install(plan: Plan, profile: Profile, archive: Path) -> Installed:
-    """Install a verified local archive. Disk writes run only in a private worker.
+    """Install in the dedicated child process, with a private mount namespace.
 
     The caller owns archive acquisition and must keep its contents unchanged
     until this call returns. A failed replacement cannot recover erased data.
@@ -203,27 +177,10 @@ def install(plan: Plan, profile: Profile, archive: Path) -> Installed:
     """
     profile.validate()
     archive = Path(archive).resolve(strict=True)
-    context = multiprocessing.get_context("fork")
-    receiver, sender = context.Pipe(duplex=False)
-    worker = context.Process(target=_worker, args=(sender, plan, profile, archive))
-    worker.start()
-    sender.close()
-    try:
-        ok, value = receiver.recv()
-    except KeyboardInterrupt:
-        handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    fd = os.open("/run/pond-installer.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as lock:
         try:
-            with suppress(ProcessLookupError):
-                os.kill(worker.pid, signal.SIGINT)
-            worker.join()
-        finally:
-            signal.signal(signal.SIGINT, handler)
-        raise
-    except EOFError as error:
-        raise InstallError("Installer process exited unexpectedly; inspect the target before retrying") from error
-    finally:
-        receiver.close()
-        worker.join()
-    if not ok:
-        raise InstallError(value)
-    return value
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise InstallError("Another Pond installation is in progress") from error
+        return _execute(plan, profile, archive)

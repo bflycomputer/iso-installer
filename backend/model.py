@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 import re
 
+USERNAME = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
+HOSTNAME = re.compile(r"[A-Za-z0-9_](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9_])?")
+MAX_PASSWORD_LENGTH = 128
+MIN_ALLOCATION_GIB = 20
+
 GIB = 1024**3
 MIB = 1024**2
 ESP_BYTES = 512 * MIB
@@ -48,11 +53,11 @@ class Profile:
     wifi: Wifi | None = field(default=None, repr=False)
 
     def validate(self):
-        if not isinstance(self.username, str) or not re.fullmatch(r"[a-z_][a-z0-9_-]{0,31}", self.username):
+        if not isinstance(self.username, str) or not USERNAME.fullmatch(self.username):
             raise InstallError("Invalid username")
-        if not isinstance(self.hostname, str) or not re.fullmatch(r"[A-Za-z0-9_](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9_])?", self.hostname):
+        if not isinstance(self.hostname, str) or not HOSTNAME.fullmatch(self.hostname):
             raise InstallError("Invalid computer name")
-        if not isinstance(self.password, str) or not 1 <= len(self.password) <= 128 or any(c in self.password for c in "\n\r\0"):
+        if not isinstance(self.password, str) or not 1 <= len(self.password) <= MAX_PASSWORD_LENGTH or any(c in self.password for c in "\n\r\0"):
             raise InstallError("Invalid password")
         if not all(isinstance(v, str) for v in (self.timezone, self.locale, self.language,
                                                self.keyboard_layout, self.keyboard_variant)):
@@ -130,6 +135,10 @@ def gaps(size, partitions):
     return result
 
 
+def max_allocation_gib(disk):
+    return max((size // GIB for _, size in gaps(disk.size, disk.partitions)), default=0)
+
+
 def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> Plan:
     if not isinstance(mode, Mode):
         raise InstallError("Unknown installation mode")
@@ -148,13 +157,13 @@ def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> P
     start, available = max(regions, key=lambda r: r[1])
     esp_bytes = 0 if esp else ESP_BYTES
     if mode is Mode.FREE_SPACE:
-        if type(allocation_gib) is not int or not 20 <= allocation_gib <= available // GIB:
-            raise InstallError("Allocation must fit the largest free region and be at least 20 GiB")
+        if type(allocation_gib) is not int or not MIN_ALLOCATION_GIB <= allocation_gib <= available // GIB:
+            raise InstallError(f"Allocation must fit the largest free region and be at least {MIN_ALLOCATION_GIB} GiB")
         total = allocation_gib * GIB
     else:
         if allocation_gib is not None:
             raise InstallError("Replacement uses the available space; do not specify an allocation")
         total = available
-        if total - esp_bytes < 20 * GIB:
+        if total - esp_bytes < MIN_ALLOCATION_GIB * GIB:
             raise InstallError("Not enough space remains after preserving EFI partitions")
     return Plan(disk, mode, allocation_gib, start + esp_bytes, total - esp_bytes, esp, None if esp else start)

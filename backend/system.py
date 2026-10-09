@@ -20,14 +20,13 @@ def verify_rootfs(archive):
 
 
 def fetch_rootfs(directory: Path) -> Path:
-    """Fetch into caller-owned scratch space; checksum failure leaves no archive."""
+    """Download into caller-owned scratch space; installation verifies the checksum."""
     directory = Path(directory)
     with tempfile.NamedTemporaryFile(dir=directory, prefix="pond-rootfs-", suffix=".tar.zst", delete=False) as out:
         path = Path(out.name)
         try:
             run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
                  "--retry-all-errors", "--output", str(path), ROOTFS_URL])
-            verify_rootfs(path)
         except BaseException:
             path.unlink(missing_ok=True)
             raise
