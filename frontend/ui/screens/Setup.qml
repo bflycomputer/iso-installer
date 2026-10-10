@@ -30,18 +30,10 @@ Item {
         const indexed = timezoneChoices.map((item, index) => Object.assign({}, item, { choiceIndex: index }))
         const ordered = indexed.filter(item => item.value === current)
             .concat(indexed.filter(item => item.value !== current))
-        const query = dropdown.query.trim().toLocaleLowerCase().replace(/_/g, " ")
-        const groups = new Set()
-        return ordered.filter(item => {
-            if (query)
-                return [item.label, item.value, item.detail, item.search].join(" ")
-                    .toLocaleLowerCase().replace(/_/g, " ").includes(query)
-            const group = item.group || item.value
-            if (groups.has(group))
-                return false
-            groups.add(group)
-            return true
-        })
+        const query = dropdown.query.trim().toLocaleLowerCase()
+        const abbreviations = ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query))
+        return abbreviations.length ? abbreviations : ordered.filter(item => [item.label, item.detail, item.search].join(" ")
+            .toLocaleLowerCase().includes(query))
     }
 
     function choices(row) {

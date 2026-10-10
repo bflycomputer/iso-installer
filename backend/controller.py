@@ -31,7 +31,7 @@ class Controller(QObject):
         super().__init__(parent)
         self._route, self._history, self._error = 'Setup', [], ''
         self._timezone = bytes(QTimeZone.systemTimeZoneId()).decode()
-        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone, include_aliases=True)
+        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone)
         self._locale, self._layout = 'en_US.UTF-8', 'us'
         self._network, self._drive, self._option = -1, 0, 0
         self._username = self._password = self._confirmation = self._hostname = ''
