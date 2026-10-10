@@ -24,6 +24,7 @@ QtObject {
     readonly property color barUsed: "#fa6d80"
     // Inline error text, used by every screen that surfaces a message.
     readonly property color textError: "#ff9faf"
+    readonly property color statusError: "#fa6d80"
     readonly property color numText: "#f8f9f9"
     readonly property color cardInset: "#463a50"
     readonly property color textDim: "#ebebeb"
@@ -69,6 +70,12 @@ QtObject {
         family: displayFont,
         pixelSize: 32,
         letterSpacing: -0.64
+    })
+    readonly property font xlItalic: Qt.font({
+        family: displayFont,
+        pixelSize: 32,
+        letterSpacing: -0.64,
+        italic: true
     })
     readonly property font lg: Qt.font({
         family: displayBookFont,
