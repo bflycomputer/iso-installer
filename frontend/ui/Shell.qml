@@ -36,23 +36,20 @@ Rectangle {
     readonly property int branchDepth: branchDepthForRoute(routeName)
     readonly property var decisionChoices: completedChoices()
     readonly property int currentDecisionChoice: currentChoiceForRoute(routeName)
-    readonly property bool includeProfile: ["DestructiveConfirm", "Profile", "Confirm"]
+    readonly property bool includeProfile: ["DestructiveConfirm", "Profile"]
                                                .indexOf(routeName) >= 0
-    readonly property int profileCompleted: routeName === "Confirm" ? 4
-        : (routeName === "Profile" && sceneLoader.item && sceneLoader.item.completedCount !== undefined
+    readonly property int profileCompleted: (routeName === "Profile" && sceneLoader.item && sceneLoader.item.completedCount !== undefined
            ? sceneLoader.item.completedCount : 0)
     readonly property int profileActive:
-        routeName === "Profile" && sceneLoader.item && sceneLoader.item.activeRow !== undefined
+        routeName === "Profile" && childOwnsFocus && sceneLoader.item && sceneLoader.item.activeRow !== undefined
             ? sceneLoader.item.activeRow : -1
 
     color: Theme.bg
     focus: true
 
     Component.onCompleted: {
-        Theme.blockHover()
         forceActiveFocus()
     }
-    Component.onDestruction: Theme.resetInputFeedback()
     onActiveFocusChanged: if (!activeFocus && !childOwnsFocus) releaseHeldKeys()
     onVisibleChanged: {
         if (visible && !childOwnsFocus)
@@ -61,11 +58,8 @@ Rectangle {
             cancelActiveInteraction()
     }
     onRouteNameChanged: {
-        // A key held across a route change must not act on the next screen,
-        // and the new screen must not hover-select whatever is under a
-        // resting pointer.
+        // A key held across a route change must not act on the next screen.
         releaseHeldKeys()
-        Theme.blockHover()
     }
 
     Connections {
@@ -90,22 +84,14 @@ Rectangle {
     }
 
     function releaseHeldKeys() {
-        cancelAccept()
         acceptKey = 0
-        Theme.navigationDirection = 0
 
         escapeHeld = false
-    }
-
-    function cancelAccept() {
-        if (sceneLoader.item && sceneLoader.item.endAccept !== undefined)
-            sceneLoader.item.endAccept()
     }
 
     function cancelActiveInteraction() {
         releaseHeldKeys()
         escapeFlash.stop()
-        Theme.resetInputFeedback()
     }
 
     function navigateBack() {
@@ -142,11 +128,9 @@ Rectangle {
         const item = sceneLoader.item
         switch (event.key) {
         case Qt.Key_Down:
-            Theme.navigationDirection = 1
             move(1)
             break
         case Qt.Key_Up:
-            Theme.navigationDirection = -1
             move(-1)
             break
         case Qt.Key_Return:
@@ -155,10 +139,7 @@ Rectangle {
                 break
             acceptKey = event.key
 
-            if (item && item.beginAccept !== undefined)
-                item.beginAccept()
-            else
-                activate()
+            activate()
             break
         case Qt.Key_Escape:
             if (event.isAutoRepeat)
@@ -187,20 +168,10 @@ Rectangle {
         if (event.isAutoRepeat)
             return
         switch (event.key) {
-        case Qt.Key_Down:
-            if (Theme.navigationDirection === 1)
-                Theme.navigationDirection = 0
-            break
-        case Qt.Key_Up:
-            if (Theme.navigationDirection === -1)
-                Theme.navigationDirection = 0
-            break
         case Qt.Key_Return:
         case Qt.Key_Enter:
-            if (event.key === acceptKey) {
-                cancelAccept()
+            if (event.key === acceptKey)
                 acceptKey = 0
-            }
             break
         case Qt.Key_Escape:
             escapeHeld = false
@@ -225,8 +196,7 @@ Rectangle {
         case "DriveSelect": return "decision1"
         case "DiskUse": return "decision2"
         case "DestructiveConfirm": return "decision3"
-        case "Profile":
-        case "Confirm": return "profile"
+        case "Profile": return "profile"
         default: return "language"
         }
     }
@@ -275,7 +245,6 @@ Rectangle {
             id: sceneLoader
             anchors.fill: parent
             onLoaded: {
-                Theme.blockHover()
                 if (item.shell !== undefined)
                     item.shell = shell
                 if (!shell.childOwnsFocus)
@@ -283,9 +252,14 @@ Rectangle {
             }
         }
 
-        PondLogo {
+        Image {
+            objectName: "pondLogo"
             x: 10
             y: 10
+            width: 100
+            height: 100
+            source: "../assets/icons/pond-letters.svg"
+            sourceSize: Qt.size(200, 200)
         }
 
         ProgressTree {
@@ -325,8 +299,7 @@ Rectangle {
             height: 30
             color: "transparent"
             border.width: 1
-            border.color: Theme.isoBadge
-            opacity: 0.5
+            border.color: Theme.chromeMuted
             radius: 4
             transformOrigin: Item.BottomLeft
             anchors.left: parent.left
@@ -337,7 +310,7 @@ Rectangle {
             Label {
                 anchors.centerIn: parent
                 text: "ISO INSTALLER"
-                color: Theme.isoBadge
+                color: Theme.chromeMuted
                 font: Theme.monoXs
                 lh: 12
             }

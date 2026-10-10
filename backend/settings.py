@@ -6,7 +6,8 @@ from PySide6.QtCore import QDateTime, QLocale, QTimeZone
 from .model import HOSTNAME, MAX_PASSWORD_LENGTH, USERNAME
 
 LANGUAGE_PRIORITY = ["en_US.UTF-8", "en_GB.UTF-8", "fr_FR.UTF-8", "de_DE.UTF-8", "es_ES.UTF-8", "ar_SA.UTF-8",
-                     "bn_BD.UTF-8"]
+                     "bn_BD"]
+LANGUAGE_LABELS = dict(zip(LANGUAGE_PRIORITY, ["English (US)", "English (UK)", "French", "German", "Spanish", "Arabic", "Bengali"]))
 
 
 # Trim account names, but preserve passwords exactly as entered.
@@ -53,8 +54,8 @@ def languages(path="/usr/share/i18n/SUPPORTED"):
         if len(columns) == 2 and columns[1] == "UTF-8":
             locale = QLocale(columns[0].split(".")[0].split("@")[0])
             if locale.name() != "C":
-                items.append({"label": "{} ({})".format(QLocale.languageToString(locale.language()),
-                                                        QLocale.territoryToString(locale.territory())),
+                items.append({"label": LANGUAGE_LABELS.get(columns[0], "{} ({})".format(
+                                  QLocale.languageToString(locale.language()), QLocale.territoryToString(locale.territory()))),
                               "value": columns[0]})
     items.sort(key=lambda i: (LANGUAGE_PRIORITY.index(i["value"]) if i["value"] in LANGUAGE_PRIORITY
                               else len(LANGUAGE_PRIORITY), i["label"]))

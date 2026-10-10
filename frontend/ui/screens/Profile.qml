@@ -7,8 +7,8 @@ Item {
     anchors.fill: parent
 
     property Item shell: null
-    readonly property bool childOwnsFocus: true
-    readonly property int rowCount: 4
+    readonly property bool childOwnsFocus: activeRow < fields.count
+    readonly property int rowCount: rows.length + 1
     property int activeRow: 0
     property bool validationRequested: false
 
@@ -19,11 +19,19 @@ Item {
         { label: "Computer name", placeholder: "Enter computer name", key: "hostname", error: "hostnameError" }
     ]
     readonly property int completedCount: rows.filter((row, index) => fieldCompleted(index)).length
+    readonly property bool canSubmit: rows.every(row => controller[row.error] === "")
+
+    Keys.onTabPressed: moveSelection(1)
+    Keys.onBacktabPressed: moveSelection(-1)
 
     function activateRow(index) {
         if (index < 0 || index >= rowCount)
             return
         activeRow = index
+        if (index === fields.count) {
+            forceActiveFocus()
+            return
+        }
         const row = fields.itemAt(index)
         if (row)
             row.focusInput()
@@ -33,7 +41,7 @@ Item {
     function chooseIndex(index) { activateRow(index) }
 
     function accept() {
-        if (activeRow < rowCount - 1)
+        if (activeRow < fields.count)
             activateRow(activeRow + 1)
         else
             submit()
@@ -59,6 +67,11 @@ Item {
             && (index !== 2 || controller.passwordError === "")
     }
 
+    MouseArea {
+        anchors.fill: parent
+        onClicked: root.activateRow(fields.count)
+    }
+
     Title {
         y: 289
         width: 210
@@ -70,7 +83,7 @@ Item {
 
     Repeater {
         id: fields
-        model: root.rowCount
+        model: root.rows.length
 
         Field {
             id: row
@@ -94,25 +107,21 @@ Item {
                 y: Theme.capYBase(19)
                 text: root.rows[row.index].placeholder
                 color: row.active ? Theme.textWhite : Theme.textDim
-                opacity: row.active ? 0.3 : 1
+                opacity: row.active ? 0.3 : 0.5
                 font: Theme.base
                 lh: Theme.lhBase
             }
 
-            TextInput {
+            PasswordInput {
                 id: input
                 objectName: "profileInput" + row.index
                 x: 15
                 width: 329
                 height: 48
-                verticalAlignment: TextInput.AlignVCenter
                 text: controller[root.rows[row.index].key]
-                color: Theme.textWhite
-                font: Theme.base
-                echoMode: row.index === 1 || row.index === 2 ? TextInput.Password : TextInput.Normal
+                masked: row.index === 1 || row.index === 2
                 inputMethodHints: Qt.ImhNoPredictiveText
                                   | (row.index === 1 || row.index === 2 ? Qt.ImhSensitiveData : 0)
-                selectByMouse: true
                 Keys.forwardTo: root.shell ? [root.shell] : []
                 onTextEdited: controller[root.rows[row.index].key] = text
                 onActiveFocusChanged: if (activeFocus && root.activeRow !== row.index) root.activeRow = row.index
@@ -121,14 +130,16 @@ Item {
     }
 
     ErrorText {
-        visible: root.validationRequested && controller[root.rows[root.activeRow].error] !== ""
+        visible: root.validationRequested && text !== ""
         y: 727
-        text: controller[root.rows[root.activeRow].error]
+        text: (root.activeRow < root.rows.length ? controller[root.rows[root.activeRow].error] : "")
+              || controller.errorMessage
     }
 
     NavBar {
-        y: 763
+        y: 753
         anchors.horizontalCenter: parent.horizontalCenter
         label: "Confirm"
+        primaryEnabled: root.canSubmit
     }
 }

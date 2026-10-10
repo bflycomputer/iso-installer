@@ -203,7 +203,7 @@ Item {
     }
 
     Title {
-        x: 736
+        anchors.horizontalCenter: parent.horizontalCenter
         y: 310
         text: "Language & timezone"
     }
@@ -274,7 +274,6 @@ Item {
                 Qt.callLater(function() { dropdown.positionAt(root.highlightedChoice) })
             }
         }
-        onHighlighted: function(index) { root.highlightedChoice = index }
         onChosen: function(index) { root.selectChoice(index) }
         onTabbed: function(direction) {
             root.closeDropdown()
@@ -289,7 +288,8 @@ Item {
     NavBar {
         y: 674
         anchors.horizontalCenter: parent.horizontalCenter
-        label: "Continue"
+        label: "Confirm"
+        showBack: false
         focused: root.activeRow === root.continueRow
     }
 

@@ -19,8 +19,8 @@ QtObject {
     readonly property color onAccent: "#23270d"
     readonly property color textWhite: "#ffffff"
     readonly property color textCream: "#f8fff1"
-    readonly property color chromeMuted: "#656a84"
-    readonly property color isoBadge: "#afc0ff"
+    readonly property color chromeMuted: "#614e68"
+    readonly property color disabled: "#4c5164"
     readonly property color onWifiActive: "#262326"
     readonly property color onCard: "#151515"
     readonly property color barUsed: "#fa6d80"
@@ -30,29 +30,7 @@ QtObject {
     readonly property color numText: "#f8f9f9"
     readonly property color cardInset: "#463a50"
     readonly property color textDim: "#ebebeb"
-    readonly property color systemPond: green
-    readonly property color systemColor1: "#6e88a6"
-    readonly property color systemColor2: "#da8446"
-    readonly property color systemColor3: "#fa6d80"
-    readonly property color navigationFeedback: "#bc9ae5"
     readonly property int motionFrameMs: 750
-
-    // Shared input feedback keeps hardware-key presses and pointer presses on
-    // the same component states. Shell owns these values and clears them when
-    // its window or route changes.
-    property int navigationDirection: 0 // 1 = down/left, -1 = up/right
-    // Hover selection must come from the pointer moving. A list scrolling,
-    // opening or appearing under a resting pointer also raises hover events,
-    // which once let the row under the cursor steal a type-ahead selection
-    // (the "Dvorak, Macintosh" defect). Programmatic movement blocks hover
-    // selection for a moment; a real move after that selects as usual.
-    property real hoverBlockedUntil: 0
-    function blockHover() { hoverBlockedUntil = Date.now() + 200 }
-    function hoverAllowed() { return Date.now() >= hoverBlockedUntil }
-
-    function resetInputFeedback() {
-        navigationDirection = 0
-    }
 
     readonly property string displayFont: "Pond Gramercy"
     readonly property string displayBookFont: "Pond Gramercy Book"

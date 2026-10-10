@@ -14,7 +14,6 @@ Item {
     property alias query: search.text
 
     signal chosen(int index)
-    signal highlighted(int index)
     signal tabbed(int direction)
 
     function focusSearch() { search.forceActiveFocus() }
@@ -22,40 +21,14 @@ Item {
     function positionAt(index) {
         if (index < 0 || index >= choices.length)
             return
-        Theme.blockHover()
         if (searchable && index === 0)
             choiceList.positionViewAtBeginning()
         else
             choiceList.positionViewAtIndex(index, ListView.Contain)
     }
 
-    onVisibleChanged: Theme.blockHover()
-
-    Repeater {
-        model: [
-            { x: -16, y: 30, grow: 32, alpha: 0.04 },
-            { x: -12, y: 20, grow: 24, alpha: 0.06 },
-            { x: -9, y: 12, grow: 18, alpha: 0.10 },
-            { x: -6, y: 9, grow: 12, alpha: 0.13 },
-            { x: -3, y: 5, grow: 6, alpha: 0.15 }
-        ]
-
-        Rectangle {
-            required property var modelData
-            visible: !root.searchable
-            x: modelData.x
-            y: modelData.y
-            width: root.width + modelData.grow
-            height: root.height + modelData.grow / 2
-            radius: 12
-            color: "#000000"
-            opacity: modelData.alpha
-        }
-    }
-
     MenuShadow {
         anchors.fill: parent
-        visible: root.searchable
     }
 
     Rectangle {
@@ -84,7 +57,6 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             keyNavigationEnabled: false
             reuseItems: true
-            onContentYChanged: Theme.blockHover()
             header: Item { height: root.searchable ? (root.query.trim() ? 7 : 8) : 0 }
 
             delegate: Rectangle {
@@ -115,10 +87,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: if (Theme.hoverAllowed()) root.highlighted(choiceRow.index)
-                    onPositionChanged: if (containsMouse && Theme.hoverAllowed()) root.highlighted(choiceRow.index)
                     onClicked: root.chosen(choiceRow.index)
                 }
             }

@@ -2,26 +2,11 @@
 from pathlib import Path
 
 import backend
-from backend.model import ESP_TYPE, Partition, ROOT_TYPE, gaps, max_allocation_gib
+from backend.model import max_allocation_gib
 
 
 def size_label(value):
     return f'{value / 1e12:.1f} TB' if value >= 1e12 else f'{value / 1e9:.1f} GB'
-
-
-def segments(disk, parts=None):
-    parts = disk.partitions if parts is None else parts
-    rows = []
-    for i, part in enumerate(parts):
-        rows.append({'path': part.path, 'firstSector': part.start // disk.sector_size,
-                     'lastSector': (part.start + part.size) // disk.sector_size - 1,
-                     'capacityFraction': part.size / disk.size, 'free': False,
-                     'systemColorIndex': i % 3 + 1, 'isPlannedRoot': part.path == 'planned-root'})
-    for start, size in gaps(disk.size, parts):
-        rows.append({'firstSector': start // disk.sector_size,
-                     'lastSector': (start + size) // disk.sector_size - 1,
-                     'capacityFraction': size / disk.size, 'free': True})
-    return sorted(rows, key=lambda row: row['firstSector'])
 
 
 def drive_row(disk):
@@ -48,15 +33,5 @@ def options(disk):
             plan = backend.plan_install(disk, mode, max_allocation_gib(disk) if mode is backend.Mode.FREE_SPACE else None)
         except backend.InstallError:
             continue
-        parts = list(disk.partitions if mode is backend.Mode.FREE_SPACE else ([plan.esp] if plan.esp else []))
-        if plan.esp is None:
-            parts.append(Partition('planned-efi', 0, '', ESP_TYPE, plan.esp_start, plan.root_start - plan.esp_start, 'vfat'))
-        parts.append(Partition('planned-root', 0, '', ROOT_TYPE, plan.root_start, plan.root_size, 'btrfs'))
-        free = mode is backend.Mode.FREE_SPACE
-        choices.append({'mode': mode.value, 'plan': plan,
-                        'detail': 'Keep existing partitions and use the available free space for Pond.' if free else
-                                  'Keep EFI; erase all other partitions.' if plan.esp else
-                                  'Erase all partitions.',
-                        'rootBytes': plan.root_size, 'capacity': size_label(plan.root_size),
-                        'preservesEfi': plan.esp is not None, 'plannedSegments': segments(disk, parts)})
+        choices.append({'mode': mode.value, 'plan': plan, 'preservesEfi': plan.esp is not None})
     return choices

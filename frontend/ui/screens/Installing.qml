@@ -242,15 +242,20 @@ Rectangle {
                         color: chip.colors.fg
                         font.family: Theme.displayFont
                         font.pixelSize: 20
-                        font.weight: 350
+                        font.weight: chip.index === 3 ? Font.Medium : 350
                     }
                 }
             }
         }
 
-        PondLogo {
+        Image {
+            objectName: "pondLogo"
             x: 10
             y: 10
+            width: 100
+            height: 100
+            source: "../../assets/icons/pond-letters.svg"
+            sourceSize: Qt.size(200, 200)
         }
 
         Rectangle {
@@ -261,13 +266,12 @@ Rectangle {
             radius: 4
             color: "transparent"
             border.width: 1
-            border.color: "#afc0ff"
-            opacity: 0.5
+            border.color: Theme.chromeMuted
 
             Text {
                 anchors.centerIn: parent
                 text: "ISO INSTALLER"
-                color: "#afc0ff"
+                color: Theme.chromeMuted
                 font.family: Theme.plexMonoMedium.name
                 font.pixelSize: 12
                 font.weight: Font.Medium
@@ -279,9 +283,8 @@ Rectangle {
             y: 1071
             height: 36
             verticalAlignment: Text.AlignVCenter
-            // The installation screen uses the longer wording.
-            text: "Early Preview Version"
-            color: "#656a84"
+            text: "Early Preview"
+            color: Theme.chromeMuted
             font.family: Theme.displayFont
             font.pixelSize: 32
             font.letterSpacing: -0.64
@@ -292,7 +295,7 @@ Rectangle {
             y: 1057
             width: 142
             text: "Some features may not work as expected. Please report any issues or bugs."
-            color: "#656a84"
+            color: Theme.chromeMuted
             wrapMode: Text.WordWrap
             lineHeight: 16
             lineHeightMode: Text.FixedHeight

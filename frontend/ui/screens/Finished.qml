@@ -23,8 +23,12 @@ Rectangle {
         }
     }
 
-    PondLogo {
-        failed: root.failed
+    Image {
+        objectName: "pondLogo"
+        width: 100
+        height: 100
+        source: "../../assets/icons/pond-letters.svg"
+        sourceSize: Qt.size(200, 200)
         scale: root.designScale
         transformOrigin: Item.Top
         anchors.top: parent.top

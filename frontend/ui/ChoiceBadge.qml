@@ -4,7 +4,6 @@ Rectangle {
     id: badge
     required property int number
     property bool active: false
-    property int numeralOffset: 0
 
     width: 48
     height: 48
@@ -21,7 +20,7 @@ Rectangle {
 
         Label {
             anchors.centerIn: parent
-            anchors.verticalCenterOffset: badge.numeralOffset
+            anchors.verticalCenterOffset: 2
             text: String(badge.number)
             color: Theme.numText
             font: Theme.base

@@ -1,5 +1,4 @@
 singleton Theme Theme.qml
-PondLogo PondLogo.qml
 Shell Shell.qml
 Label Label.qml
 NavBar NavBar.qml
@@ -9,11 +8,9 @@ ChoiceDropdown ChoiceDropdown.qml
 MenuShadow MenuShadow.qml
 DriveIllustration DriveIllustration.qml
 ChoiceBadge ChoiceBadge.qml
-StorageBar StorageBar.qml
-OptionTitle OptionTitle.qml
+PasswordInput PasswordInput.qml
 InstallOptionCard InstallOptionCard.qml
 EscapeHint EscapeHint.qml
 Field Field.qml
-HoldButton HoldButton.qml
 Title Title.qml
 ErrorText ErrorText.qml

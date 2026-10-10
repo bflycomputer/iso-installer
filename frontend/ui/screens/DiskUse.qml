@@ -25,7 +25,7 @@ Item {
     }
 
     Title {
-        y: 243
+        y: 270
         width: 283
         x: 864.5 - width / 2
         horizontalAlignment: Text.AlignHCenter
@@ -35,7 +35,7 @@ Item {
     }
 
     Rectangle {
-        y: 336
+        y: 366
         anchors.horizontalCenter: parent.horizontalCenter
         width: Math.max(144, driveName.implicitWidth + 28, driveDetails.implicitWidth + 28)
         height: 59
@@ -65,11 +65,19 @@ Item {
         }
     }
 
+    Rectangle {
+        x: 863
+        y: 433
+        width: 1
+        height: 16
+        color: Theme.lavender
+    }
+
     ListView {
         id: options
         objectName: "installChoices"
         x: 504
-        y: 427
+        y: 457
         width: 720
         height: Math.min(430, count * 99 + Math.max(0, count - 1) * spacing)
         spacing: 6
@@ -78,7 +86,6 @@ Item {
         model: controller.installOptions
         currentIndex: root.activeRow
         highlightMoveDuration: 0
-        onContentYChanged: Theme.blockHover()
 
         delegate: InstallOptionCard {
             id: card
@@ -86,28 +93,28 @@ Item {
             required property var modelData
             number: index + 1
             active: index === root.activeRow
-            freeSpace: modelData.mode === "free-space"
-            detail: String(modelData.detail || "")
+            title: modelData.mode === "free-space" ? "Install in unallocated space"
+                                                    : "Erase entire drive and install Pond"
+            detail: modelData.mode === "free-space"
+                    ? "Use space that’s already free without erasing the rest of the drive."
+                    : modelData.preservesEfi
+                      ? "Delete everything on the selected drive (EFI partition is preserved)."
+                      : "Delete everything on the selected drive and use all of it for Pond."
             onSelected: root.chooseIndex(index)
             onAccepted: {
                 root.chooseIndex(index)
                 root.accept()
             }
 
-            StorageBar {
-                anchors.fill: parent
-                segments: card.modelData.plannedSegments
-                animationMode: card.modelData.mode === "replace" ? "erase" : "none"
-            }
         }
     }
 
     ErrorText {
-        y: 638
+        y: 675
     }
 
     NavBar {
-        y: 663
+        y: 701
         anchors.horizontalCenter: parent.horizontalCenter
         label: "Confirm"
     }

@@ -51,7 +51,6 @@ Item {
             highlightMoveDuration: 0
             boundsBehavior: Flickable.StopAtBounds
             clip: true
-            onContentYChanged: Theme.blockHover()
 
             delegate: Rectangle {
                 id: netRow
@@ -99,9 +98,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: if (Theme.hoverAllowed()) root.chooseIndex(netRow.index)
                     onClicked: root.chooseIndex(netRow.index)
                     onDoubleClicked: {
                         root.chooseIndex(netRow.index)
@@ -117,7 +114,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 text: controller.wifi.scanning ? "Looking for networks…"
-                      : controller.wifi.networkConnected ? "Connected with a cable. Press Enter to continue."
+                      : controller.wifi.networkConnected ? "Connected with a cable"
                       : controller.wifi.available ? "No Wi-Fi networks found"
                                                        : "No Wi-Fi adapter found"
                 color: Theme.textWhite
@@ -131,15 +128,16 @@ Item {
     ErrorText {
         visible: (controller.errorMessage !== ""
                                      || controller.wifi.errorMessage !== "")
-        y: 706
+        y: 690
         text: controller.errorMessage !== "" ? controller.errorMessage : controller.wifi.errorMessage
     }
 
     NavBar {
-        y: 726
+        y: 716
         anchors.horizontalCenter: parent.horizontalCenter
-        label: "Select Wifi"
-        chevronWidth: 104
+        label: "Next"
+        spacing: 12
+        primaryEnabled: !controller.wifi.connecting && (root.rowCount > 0 || controller.wifi.networkConnected)
     }
 
 }

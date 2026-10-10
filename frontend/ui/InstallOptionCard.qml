@@ -7,9 +7,7 @@ Item {
     required property int number
     property bool active: false
     property string detail: ""
-    property bool freeSpace: false
-
-    default property alias visualizationData: visualizationSlot.data
+    property string title: ""
 
     readonly property bool visualActive: enabled && (active || pointer.pressed)
 
@@ -25,7 +23,6 @@ Item {
     ChoiceBadge {
         number: root.number
         active: root.visualActive
-        numeralOffset: 2
     }
 
     Rectangle {
@@ -38,15 +35,17 @@ Item {
 
     Item {
         x: 64
-        width: Math.max(0, visualizationSlot.x - x - 24)
+        width: 632
         height: root.height
         clip: true
 
-        OptionTitle {
+        Label {
             y: 24
             width: parent.width
-            active: root.visualActive
-            freeSpace: root.freeSpace
+            text: root.title
+            color: root.visualActive ? "black" : Theme.textWhite
+            font: Theme.lg
+            lh: Theme.lhLg
         }
 
         Label {
@@ -61,22 +60,11 @@ Item {
         }
     }
 
-    Item {
-        id: visualizationSlot
-        x: root.width - 24 - width
-        y: Math.round((root.height - height) / 2)
-        width: 150
-        height: 40
-        clip: true
-    }
-
     MouseArea {
         id: pointer
         anchors.fill: parent
         enabled: root.enabled
-        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onEntered: if (Theme.hoverAllowed()) root.selected()
         onClicked: root.selected()
         onDoubleClicked: root.accepted()
     }

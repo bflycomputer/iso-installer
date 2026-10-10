@@ -3,11 +3,9 @@ import QtQuick
 Row {
     id: nav
 
-    property string label: "Enter"
-    property bool showChevrons: true
-    // 104 is the standard control; 124 only the scroll variant.
-    property int chevronWidth: 104
-    // Keyboard focus ring for screens that make the pill a focusable row.
+    property string label: "Confirm"
+    property bool showBack: true
+    property bool primaryEnabled: true
     property bool focused: false
 
     spacing: 10
@@ -22,98 +20,51 @@ Row {
     }
 
     Rectangle {
-        id: chevronPill
-        visible: nav.showChevrons
-        width: nav.chevronWidth
+        objectName: "navigationBack"
+        visible: nav.showBack
+        width: 64
         height: 64
-        radius: 54
-        color: Theme.surface
-        clip: true
+        radius: 32
+        color: backPointer.containsMouse ? Theme.lavender : Theme.surface
 
-        Repeater {
-            model: 2
-            Item {
-                id: arrow
-                required property int index
-                readonly property int direction: index === 0 ? 1 : -1
-                readonly property bool held: Theme.navigationDirection === direction || pointer.pressed
-                x: index * width
-                width: chevronPill.width / 2
-                height: 64
+        Image {
+            anchors.centerIn: parent
+            width: 24
+            height: 24
+            source: backPointer.containsMouse ? "../assets/icons/navigation-back-hover.svg"
+                                              : "../assets/icons/navigation-back.svg"
+            sourceSize: Qt.size(48, 48)
+        }
 
-                Item {
-                    x: arrow.index === 0 ? 2 : 0
-                    y: 2
-                    width: parent.width - 2
-                    height: 60
-                    clip: true
-                    opacity: arrow.held ? 1 : 0.3
-                    visible: arrow.held || pointer.containsMouse
-                    Rectangle {
-                        x: arrow.index === 0 ? 0 : -30
-                        width: parent.width + 30
-                        height: 60
-                        topLeftRadius: arrow.index === 0 ? 30 : 0
-                        bottomLeftRadius: topLeftRadius
-                        topRightRadius: arrow.index === 1 ? 30 : 0
-                        bottomRightRadius: topRightRadius
-                        color: Theme.navigationFeedback
-                    }
-                }
-                Image {
-                    x: nav.chevronWidth === 104 ? (arrow.index === 0 ? 20 : 8) : 19
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 24
-                    height: 24
-                    source: "../assets/icons/chevron-" + (arrow.index === 0 ? "down" : "up") + ".svg"
-                    sourceSize: Qt.size(48, 48)
-                }
-                MouseArea {
-                    id: pointer
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: nav.parent.moveSelection(arrow.direction)
-                }
-            }
+        MouseArea {
+            id: backPointer
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: controller.back()
         }
     }
 
     Rectangle {
+        objectName: "navigationConfirm"
         width: 240
         height: 64
-        radius: 54
-        color: Theme.green
-        border.width: nav.focused ? 3 : 0
-        border.color: Theme.lavender
+        radius: 32
+        readonly property bool highlighted: nav.primaryEnabled && (confirmPointer.containsMouse || nav.focused)
+        color: !nav.primaryEnabled ? Theme.disabled : highlighted ? Theme.lavender : Theme.green
+        enabled: nav.primaryEnabled
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: 0.5
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 10
-
-            Item {
-                width: 20
-                height: 20
-                Image {
-                    x: 0.666
-                    y: 0.666
-                    width: 18.668
-                    height: 18.668
-                    source: "../assets/icons/enter-key.svg"
-                    sourceSize: Qt.size(38, 38)
-                }
-            }
-            Label {
-                text: nav.label
-                color: Theme.onAccent
-                font: Theme.base
-                lh: Theme.lhBase
-            }
+        Label {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: 2
+            text: nav.label
+            color: !nav.primaryEnabled ? Theme.bg : parent.highlighted ? Theme.surface : Theme.onAccent
+            font: Theme.base
+            lh: Theme.lhBase
         }
 
         MouseArea {
+            id: confirmPointer
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor

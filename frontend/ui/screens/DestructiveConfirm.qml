@@ -6,47 +6,33 @@ Item {
     anchors.fill: parent
 
     readonly property int rowCount: 0
-
     readonly property var option: controller.installOptions[controller.selectedInstallOption] || ({})
     readonly property var drive: controller.selectedDriveData
-    readonly property real cardX: 605
-    readonly property real cardY: 281
 
-    function accept() {
-        controller.advance()
-    }
+    function accept() { controller.advance() }
 
     Rectangle {
-        x: root.cardX
-        y: root.cardY
+        x: 605
+        y: 384
         width: 518
-        height: 407
+        height: 269
         radius: 24
         color: Theme.surface
 
-        StorageBar {
-            x: 40
-            y: 40
-            segments: root.option.plannedSegments || []
-            animationMode: "erase"
-        }
-
         Title {
             x: 40
-            y: 120
+            y: 43
             width: 438
-            wrapMode: Text.WordWrap
-            text: "Replace the contents of this disk?"
+            text: "Erase this disk and install Pond?"
         }
 
         Label {
             x: 40
-            y: Theme.capYSmR(212)
+            y: Theme.capYSmR(88)
             width: 438
             wrapMode: Text.WordWrap
-            text: root.option.preservesEfi
-                  ? "The EFI partition will be kept. All other partitions and their files will be permanently erased."
-                  : "All partitions and files on this disk will be permanently erased."
+            text: "Everything on this disk will be permanently erased. Pond will then use the entire disk."
+                  + (root.option.preservesEfi ? " (EFI partition is preserved)." : "")
             color: Theme.textWhite
             opacity: 0.7
             font: Theme.smR
@@ -55,16 +41,16 @@ Item {
 
         Rectangle {
             x: 40
-            y: 284
-            width: 420
+            y: 146
+            width: 438
             height: 83
             radius: 12
             color: Theme.cardInset
 
             Label {
                 x: 20
-                y: 20
-                width: 380
+                y: 16
+                width: 398
                 elide: Text.ElideRight
                 text: root.drive.name || "Selected disk"
                 color: Theme.textWhite
@@ -73,8 +59,8 @@ Item {
             }
             Label {
                 x: 20
-                y: Theme.capYBaseR(53)
-                width: 380
+                y: Theme.capYBaseR(49)
+                width: 398
                 elide: Text.ElideRight
                 text: (root.drive.capacity || "Unknown") + " Storage • " + (root.drive.used || "Unknown") + " in use"
                 color: Theme.textWhite
@@ -87,14 +73,12 @@ Item {
 
     ChoiceBadge {
         x: 840
-        y: 257
+        y: 360
         number: controller.selectedInstallOption + 1
     }
 
     NavBar {
-        x: 864 - width / 2
-        y: 728
-        label: "Confirm"
-        showChevrons: false
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 693
     }
 }

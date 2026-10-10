@@ -11,31 +11,12 @@ Item {
     property int activeRow: 0
     readonly property int rowCount: 2
     property bool passwordVisible: false
-    property var maskSequence: []
 
     readonly property bool connecting: controller.wifi.connecting
     property bool joinFailed: false
     readonly property bool editing: !connecting && !joinFailed
     readonly property int selectedStrength:
         controller.selectedNetworkStrength
-
-    readonly property var maskGlyphs: ["../../assets/icons/password-mask-plant.svg",
-                                       "../../assets/icons/password-mask-lily-pad.svg",
-                                       "../../assets/icons/password-mask-leaf.svg"]
-
-    // A newly typed character never repeats the glyph before it; existing
-    // glyphs stay put rather than reshuffling on every keystroke.
-    function syncMaskSequence(length) {
-        const target = Math.max(0, Math.min(22, Number(length) || 0))
-        const sequence = maskSequence.slice(0, target)
-        while (sequence.length < target) {
-            let glyph = Math.floor(Math.random() * maskGlyphs.length)
-            if (sequence.length > 0 && glyph === sequence[sequence.length - 1])
-                glyph = (glyph + 1 + (sequence.length % 2)) % maskGlyphs.length
-            sequence.push(glyph)
-        }
-        maskSequence = sequence
-    }
 
     function focusPassword() {
         Qt.callLater(function() {
@@ -98,13 +79,12 @@ Item {
     }
 
     Component.onCompleted: {
-        syncMaskSequence(password.length)
         focusPassword()
     }
     onVisibleChanged: if (visible) focusPassword()
 
     Title {
-        y: 310
+        y: 376
         anchors.horizontalCenter: parent.horizontalCenter
         text: "Connect to Wifi"
     }
@@ -112,7 +92,7 @@ Item {
     Rectangle {
         objectName: "wifiJoinCard"
         x: 685
-        y: 396
+        y: 454
         width: 358
         height: 167
         radius: 16
@@ -200,22 +180,17 @@ Item {
                 radius: 12
                 color: Theme.fieldOnSurface
 
-                TextInput {
+                PasswordInput {
                     id: password
                     objectName: "wifiPasswordInput"
                     anchors.fill: parent
                     anchors.leftMargin: 12
                     anchors.rightMargin: 12
-                    echoMode: root.passwordVisible ? TextInput.Normal : TextInput.NoEcho
-                    color: root.passwordVisible ? Theme.green : "transparent"
-                    selectionColor: Theme.lavender
-                    selectedTextColor: Theme.onWifiActive
-                    cursorVisible: root.passwordVisible && activeFocus && root.activeRow === 0
+                    masked: !root.passwordVisible
+                    whiteMask: false
+                    textColor: Theme.green
                     readOnly: root.activeRow !== 0 || !root.editing
-                    font: Theme.base
-                    verticalAlignment: TextInput.AlignVCenter
                     inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
-                    onTextChanged: root.syncMaskSequence(length)
                     Keys.forwardTo: root.shell ? [root.shell] : []
                     Keys.onPressed: function(event) {
                         if (event.key === Qt.Key_Tab) {
@@ -225,27 +200,6 @@ Item {
                             if (!event.isAutoRepeat)
                                 root.togglePasswordVisibility()
                             event.accepted = true
-                        }
-                    }
-                }
-
-                Row {
-                    visible: !root.passwordVisible
-                    x: 12
-                    y: 16
-                    spacing: 2
-                    clip: true
-                    width: 270
-
-                    Repeater {
-                        model: Math.min(password.length, 22)
-                        Image {
-                            required property int index
-                            width: 12
-                            height: 12
-                            source: root.maskGlyphs[root.maskSequence[index] !== undefined
-                                                    ? root.maskSequence[index] : index % root.maskGlyphs.length]
-                            sourceSize: Qt.size(24, 24)
                         }
                     }
                 }
@@ -309,9 +263,9 @@ Item {
     NavBar {
         objectName: "wifiJoinNavigation"
         visible: !root.connecting
-        y: 613
+        y: 661
         anchors.horizontalCenter: parent.horizontalCenter
-        showChevrons: false
+        spacing: 12
         label: root.joinFailed ? "Try again" : "Connect"
     }
 }

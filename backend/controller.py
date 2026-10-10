@@ -42,6 +42,7 @@ class Controller(QObject):
         self._wifi.connectionSucceeded.connect(self._connected)
         self._wifi.connectionFailed.connect(self._set_error)
         self._probed.connect(self._set_disks)
+        self.profileChanged.connect(lambda: self._set_error(''))
         self._probe_thread = threading.Thread(target=self._probe, daemon=True)
         self._probe_thread.start()
 
@@ -137,11 +138,7 @@ class Controller(QObject):
         elif route == 'DestructiveConfirm':
             self._go('Profile')
         elif route == 'Profile':
-            problem = self.usernameError or self.passwordError or self.confirmationError or self.hostnameError
-            if problem:
-                self._set_error(problem)
-            else:
-                self._go('Confirm')
+            self.beginInstallation()
 
     @Slot()
     def back(self):
@@ -158,13 +155,14 @@ class Controller(QObject):
 
     @Slot()
     def beginInstallation(self):
-        if self._route != 'Confirm' or self._installer is not None:
+        if self._route != 'Profile' or self._installer is not None:
             return
         try:
+            problem = self.usernameError or self.passwordError or self.confirmationError or self.hostnameError
+            if problem:
+                raise backend.InstallError(problem)
             profile = self._profile()
             profile.validate()
-            if self.confirmationError:
-                raise backend.InstallError(self.confirmationError)
             plan = self._option_data()['plan']
         except backend.InstallError as error:
             self._set_error(str(error))
