@@ -14,6 +14,8 @@ QtObject {
     readonly property color surface: "#33273d"
     readonly property color fieldOnLavender: "#3d2641"
     readonly property color fieldOnSurface: "#59415e"
+    readonly property color searchSurface: "#2c1a2f"
+    readonly property color searchDivider: "#563e61"
     readonly property color onAccent: "#23270d"
     readonly property color textWhite: "#ffffff"
     readonly property color textCream: "#f8fff1"

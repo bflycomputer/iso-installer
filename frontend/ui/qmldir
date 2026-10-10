@@ -6,6 +6,7 @@ NavBar NavBar.qml
 ProgressTree ProgressTree.qml
 WifiSignal WifiSignal.qml
 ChoiceDropdown ChoiceDropdown.qml
+MenuShadow MenuShadow.qml
 DriveIllustration DriveIllustration.qml
 ChoiceBadge ChoiceBadge.qml
 StorageBar StorageBar.qml

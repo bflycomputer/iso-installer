@@ -31,7 +31,7 @@ class Controller(QObject):
         super().__init__(parent)
         self._route, self._history, self._error = 'Setup', [], ''
         self._timezone = bytes(QTimeZone.systemTimeZoneId()).decode()
-        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone)
+        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone, include_aliases=True)
         self._locale, self._layout = 'en_US.UTF-8', 'us'
         self._network, self._drive, self._option = -1, 0, 0
         self._username = self._password = self._confirmation = self._hostname = ''
@@ -266,6 +266,7 @@ class Controller(QObject):
     localeName = Property(str, lambda self: self._locale, notify=setupChanged)
     languageLabel = Property(str, lambda self: self._label(0), notify=setupChanged)
     keyboardLabel = Property(str, lambda self: self._label(1), notify=setupChanged)
+    timezone = Property(str, lambda self: self._timezone, notify=setupChanged)
     timezoneLabel = Property(str, lambda self: self._label(2), notify=setupChanged)
     selectedNetwork = Property(int, lambda self: self._network, _setter('_network', 'selectedNetworkChanged'), notify=selectedNetworkChanged)
     selectedSsid = Property(str, lambda self: self._wifi.get(self._network).get('ssid', ''), notify=selectedNetworkChanged)

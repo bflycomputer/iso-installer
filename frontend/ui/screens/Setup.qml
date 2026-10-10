@@ -6,6 +6,8 @@ Item {
     id: root
     anchors.fill: parent
 
+    property Item shell: null
+    readonly property bool childOwnsFocus: dropdownOpen && activeRow === 2
     readonly property int rowCount: 4
     readonly property int continueRow: 3
     property int activeRow: 0
@@ -21,6 +23,26 @@ Item {
     readonly property var languageChoices: JSON.parse(controller.languageChoices)
     readonly property var keyboardChoices: JSON.parse(controller.keyboardChoices)
     readonly property var timezoneChoices: JSON.parse(controller.timezoneChoices)
+    readonly property var dropdownChoices: {
+        if (activeRow !== 2)
+            return choices(activeRow)
+        const current = controller.timezone
+        const indexed = timezoneChoices.map((item, index) => Object.assign({}, item, { choiceIndex: index }))
+        const ordered = indexed.filter(item => item.value === current)
+            .concat(indexed.filter(item => item.value !== current))
+        const query = dropdown.query.trim().toLocaleLowerCase().replace(/_/g, " ")
+        const groups = new Set()
+        return ordered.filter(item => {
+            if (query)
+                return [item.label, item.value, item.detail, item.search].join(" ")
+                    .toLocaleLowerCase().replace(/_/g, " ").includes(query)
+            const group = item.group || item.value
+            if (groups.has(group))
+                return false
+            groups.add(group)
+            return true
+        })
+    }
 
     function choices(row) {
         return row === 0 ? languageChoices : row === 1 ? keyboardChoices : timezoneChoices
@@ -35,16 +57,26 @@ Item {
         activeRow = row
         if (choices(row).length === 0)
             return
-        highlightedChoice = Math.max(0, controller.setupChoiceIndex(row))
+        dropdown.query = ""
+        highlightedChoice = row === 2 ? 0 : Math.max(0, controller.setupChoiceIndex(row))
         typeAhead = ""
         dropdownOpen = true
-        Qt.callLater(function() { dropdown.positionAt(highlightedChoice) })
+        Qt.callLater(function() {
+            dropdown.positionAt(highlightedChoice)
+            if (root.childOwnsFocus)
+                dropdown.focusSearch()
+            else if (root.shell)
+                root.shell.forceActiveFocus()
+        })
     }
 
     function closeDropdown() {
         dropdownOpen = false
+        dropdown.query = ""
         typeAhead = ""
         typeAheadReset.stop()
+        if (shell)
+            shell.forceActiveFocus()
     }
 
     function toggleDropdown() {
@@ -55,16 +87,17 @@ Item {
     }
 
     function selectChoice(index) {
-        if (index < 0 || index >= choices(activeRow).length)
+        if (index < 0 || index >= dropdownChoices.length)
             return
-        controller.selectSetupChoice(activeRow, index)
+        const sourceIndex = activeRow === 2 ? dropdownChoices[index].choiceIndex : index
+        controller.selectSetupChoice(activeRow, sourceIndex)
         closeDropdown()
         activeRow = activeRow + 1
     }
 
     function moveSelection(delta) {
         if (dropdownOpen) {
-            const n = choices(activeRow).length
+            const n = dropdownChoices.length
             if (n === 0)
                 return
             highlightedChoice = (highlightedChoice + delta + n) % n
@@ -102,6 +135,10 @@ Item {
     function dismiss() {
         if (!dropdownOpen)
             return false
+        if (activeRow === 2 && dropdown.query.length > 0) {
+            dropdown.query = ""
+            return true
+        }
         closeDropdown()
         return true
     }
@@ -120,7 +157,7 @@ Item {
     }
 
     function handleTextInput(text) {
-        if (!dropdownOpen || !text || text.length !== 1)
+        if (!dropdownOpen || activeRow === 2 || !text || text.length !== 1)
             return false
         typeAhead += text.toLocaleLowerCase()
         typeAheadReset.restart()
@@ -227,10 +264,22 @@ Item {
         y: 406 + Math.min(root.activeRow, 2) * 80
         z: 300
         visible: root.dropdownOpen
-        choices: root.choices(root.activeRow)
+        searchable: root.activeRow === 2
+        shell: root.shell
+        choices: root.dropdownChoices
         highlightedIndex: root.highlightedChoice
+        onQueryChanged: {
+            if (root.activeRow === 2) {
+                root.highlightedChoice = root.dropdownChoices.length > 0 ? 0 : -1
+                Qt.callLater(function() { dropdown.positionAt(root.highlightedChoice) })
+            }
+        }
         onHighlighted: function(index) { root.highlightedChoice = index }
         onChosen: function(index) { root.selectChoice(index) }
+        onTabbed: function(direction) {
+            root.closeDropdown()
+            root.moveSelection(direction)
+        }
     }
 
     ErrorText {
