@@ -3,6 +3,7 @@ hyperv
 linux
 mkinitcpio
 mkinitcpio-archiso
+networkmanager
 open-vm-tools
 qemu-guest-agent
 syslinux
