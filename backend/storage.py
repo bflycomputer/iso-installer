@@ -1,6 +1,7 @@
 """Native storage discovery and writes; callers retain immutable disk identities."""
 
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -41,14 +42,18 @@ def probe() -> tuple[Disk, ...]:
         parts = []
         if table:
             by_path = {d["path"]: d for d in children}
-            for p in bd.part.get_disk_parts(row["path"]):
-                node = by_path.get(p.path)
-                if node is None or node["type"] != "part":
-                    busy = True
-                    continue
-                number = int((Path("/sys/class/block") / Path(p.path).name / "partition").read_text())
-                parts.append(Partition(p.path, number, (p.uuid or "").lower(),
-                    (p.type_guid or "").lower(), p.start, p.size, node.get("fstype") or ""))
+            try:
+                for p in bd.part.get_disk_parts(row["path"]):
+                    node = by_path.get(p.path)
+                    if node is None or node["type"] != "part":
+                        busy = True
+                        continue
+                    number = int((Path("/sys/class/block") / Path(p.path).name / "partition").read_text())
+                    parts.append(Partition(p.path, number, (p.uuid or "").lower(),
+                        (p.type_guid or "").lower(), p.start, p.size, node.get("fstype") or ""))
+            except Exception:
+                logging.warning("Skipping unreadable storage device %s", row["path"], exc_info=True)
+                continue
         disks.append(Disk(row["path"], identity, row["maj:min"], row["size"], row["log-sec"], table,
                           tuple(sorted(parts, key=lambda p: p.start)), busy, bool(row["ro"])))
     return tuple(disks)
