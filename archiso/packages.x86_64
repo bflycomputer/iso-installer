@@ -1,12 +1,16 @@
+amd-ucode
 arch-install-scripts
 base
 btrfs-progs
 dosfstools
 efibootmgr
 hyperv
+intel-ucode
 libarchive
 libblockdev-part
 linux
+linux-firmware
+linux-firmware-marvell
 mkinitcpio
 mkinitcpio-archiso
 networkmanager
@@ -17,3 +21,4 @@ qemu-guest-agent
 qt6-wayland
 syslinux
 virtualbox-guest-utils-nox
+wireless-regdb
