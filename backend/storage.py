@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from .command import run
-from .model import Disk, Partition, Plan, Mode, InstallError, ESP_BYTES, ESP_TYPE, ROOT_TYPE
+from .model import Disk, Partition, Plan, Mode, BootMode, InstallError, ESP_BYTES, ESP_TYPE, ROOT_TYPE, BIOS_TYPE, MIB
 
 
 def blockdev():
@@ -109,9 +109,12 @@ def create_partitions(plan: Plan, created: list[Partition]):
             raise InstallError("The partition type was not applied")
         return part
 
-    esp = plan.esp or create(plan.esp_start, ESP_BYTES, ESP_TYPE)
+    if plan.boot_mode is BootMode.BIOS:
+        boot = plan.bios or create(plan.boot_start, MIB, BIOS_TYPE)
+    else:
+        boot = plan.esp or create(plan.boot_start, ESP_BYTES, ESP_TYPE)
     root = create(plan.root_start, plan.root_size, ROOT_TYPE)
-    return esp, root
+    return boot, root
 
 
 def remove_created(disk, created):

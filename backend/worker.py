@@ -16,13 +16,14 @@ def request(plan, profile):
     data = asdict(profile)
     data.pop('wifi')
     return {'disk': asdict(plan.disk), 'mode': plan.mode.value,
-            'allocation_gib': plan.allocation_gib, 'profile': data}
+            'allocation_gib': plan.allocation_gib, 'boot_mode': plan.boot_mode.value, 'profile': data}
 
 
 def decode(data):
     disk = dict(data['disk'])
     disk['partitions'] = tuple(Partition(**part) for part in disk['partitions'])
-    plan = backend.plan_install(backend.Disk(**disk), backend.Mode(data['mode']), data['allocation_gib'])
+    plan = backend.plan_install(backend.Disk(**disk), backend.Mode(data['mode']), data['allocation_gib'],
+                                boot_mode=backend.BootMode(data['boot_mode']))
     profile = backend.Profile(**data['profile'])
     return plan, profile
 

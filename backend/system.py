@@ -35,14 +35,14 @@ def fetch_rootfs(directory: Path) -> Path:
     return path
 
 
-def fstab(root_uuid, esp_uuid):
-    for value in (root_uuid, esp_uuid):
+def fstab(root_uuid, esp_uuid=None):
+    for value in (root_uuid,) if esp_uuid is None else (root_uuid, esp_uuid):
         if not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", value):
             raise InstallError("Invalid filesystem or EFI partition UUID")
     lines = [f"UUID={root_uuid}  {mount}  btrfs  rw,relatime,compress=zstd:1,subvol={sub}  0 0\n"
              for sub, mount in SUBVOLUMES]
     return "".join(lines) + "tmpfs  /tmp  tmpfs  defaults,noatime,mode=1777  0 0\n" + \
-        f"PARTUUID={esp_uuid}  /boot/efi  vfat  umask=0077,nofail  0 1\n"
+        (f"PARTUUID={esp_uuid}  /boot/efi  vfat  umask=0077,nofail  0 1\n" if esp_uuid else "")
 
 
 def mount_root(root, target):
@@ -81,7 +81,7 @@ def provision(target, root, esp, archive, profile, progress=lambda value: None):
     progress(0.78)
     (target / "boot/efi").mkdir(parents=True, exist_ok=True)
     root_uuid = identifier(["blkid", "-s", "UUID", "-o", "value", root.path])
-    (target / "etc/fstab").write_text(fstab(root_uuid, esp.uuid))
+    (target / "etc/fstab").write_text(fstab(root_uuid, esp.uuid if esp else None))
     prefix = ["arch-chroot", str(target)]
     read_profile = "set -euo pipefail\n" + "\n".join(
         f"IFS= read -r POND_{name}" for name in ("USERNAME", "PASSWORD", "TIMEZONE", "HOSTNAME")) + "\n"
@@ -94,17 +94,20 @@ def provision(target, root, esp, archive, profile, progress=lambda value: None):
     progress(0.82)
     configure_hardware(target, progress)
     progress(0.95)
-    stub = target / "root/pond-grub-stub.cfg"
-    stub.write_text(
-        "insmod part_gpt\n"
-        "insmod btrfs\n"
-        f"search --no-floppy --fs-uuid --set=root {root_uuid}\n"
-        "configfile ($root)/@/boot/grub/grub.cfg\n"
-    )
-    run(prefix + ["grub-mkstandalone", "--format=x86_64-efi", "--output=/root/grubx64.efi",
-                  "--locales=", "--fonts=unicode", "boot/grub/grub.cfg=/root/pond-grub-stub.cfg"])
-    stub.unlink()
-    for artifact in ("root/grubx64.efi", "boot/vmlinuz-linux-pond", "boot/initramfs-linux-pond.img",
-                     "boot/vmlinuz-linux-pond-lts", "boot/initramfs-linux-pond-lts.img"):
+    artifacts = ["boot/vmlinuz-linux-pond", "boot/initramfs-linux-pond.img",
+                 "boot/vmlinuz-linux-pond-lts", "boot/initramfs-linux-pond-lts.img"]
+    if esp is not None:
+        stub = target / "root/pond-grub-stub.cfg"
+        stub.write_text(
+            "insmod part_gpt\n"
+            "insmod btrfs\n"
+            f"search --no-floppy --fs-uuid --set=root {root_uuid}\n"
+            "configfile ($root)/@/boot/grub/grub.cfg\n"
+        )
+        run(prefix + ["grub-mkstandalone", "--format=x86_64-efi", "--output=/root/grubx64.efi",
+                      "--locales=", "--fonts=unicode", "boot/grub/grub.cfg=/root/pond-grub-stub.cfg"])
+        stub.unlink()
+        artifacts.append("root/grubx64.efi")
+    for artifact in artifacts:
         if not (target / artifact).is_file() or (target / artifact).stat().st_size == 0:
             raise InstallError("A required boot artifact is missing")

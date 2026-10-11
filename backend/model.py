@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 import re
 
 USERNAME = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
@@ -14,6 +15,7 @@ MIB = 1024**2
 ESP_BYTES = 512 * MIB
 ESP_TYPE = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 ROOT_TYPE = "0fc63daf-8483-4772-8e79-3d69d8477de4"
+BIOS_TYPE = "21686148-6449-6e6f-744e-656564454649"
 ROOTFS_SHA256 = "8c07d67d3b8ed9a9ea0271d7f3ce77081e0d1f01539332fb0849e967a0ff9fef"
 ROOTFS_URL = f"https://releases.butterfly.so/rootfs/{ROOTFS_SHA256}/pond-rootfs.tar.zst"
 SUBVOLUMES = (
@@ -31,6 +33,15 @@ class InstallError(RuntimeError):
 class Mode(Enum):
     FREE_SPACE = "free-space"
     REPLACE = "replace"
+
+
+class BootMode(Enum):
+    UEFI = "uefi"
+    BIOS = "bios"
+
+
+def current_boot_mode():
+    return BootMode.UEFI if Path("/sys/firmware/efi").is_dir() else BootMode.BIOS
 
 
 @dataclass(frozen=True)
@@ -119,7 +130,9 @@ class Plan:
     root_start: int
     root_size: int
     esp: Partition | None
-    esp_start: int | None
+    boot_start: int | None
+    boot_mode: BootMode
+    bios: Partition | None
 
 
 def gaps(size, partitions):
@@ -139,15 +152,18 @@ def max_allocation_gib(disk):
     return max((size // GIB for _, size in gaps(disk.size, disk.partitions)), default=0)
 
 
-def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> Plan:
+def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None,
+                 *, boot_mode: BootMode = BootMode.UEFI) -> Plan:
     if not isinstance(mode, Mode):
         raise InstallError("Unknown installation mode")
+    if not isinstance(boot_mode, BootMode):
+        raise InstallError("Unknown firmware mode")
     if disk.busy or disk.read_only or not disk.identity:
         raise InstallError("The selected disk is unavailable or in use")
     if disk.size < 21 * GIB:
         raise InstallError("Pond needs at least 20GB of space")
     esps = [p for p in disk.partitions if p.kind == ESP_TYPE]
-    if len(esps) > 1:
+    if boot_mode is BootMode.UEFI and len(esps) > 1:
         raise InstallError(f"This disk has {len(esps)} EFI partitions, wipe it before attempting to install")
     esp = esps[0] if esps else None
     if mode is Mode.FREE_SPACE and disk.table != "gpt":
@@ -157,7 +173,13 @@ def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> P
     if not regions:
         raise InstallError("No contiguous unallocated space")
     start, available = max(regions, key=lambda r: r[1])
-    esp_bytes = 0 if esp else ESP_BYTES
+    bios = None
+    if boot_mode is BootMode.BIOS and mode is Mode.FREE_SPACE:
+        boots = [p for p in disk.partitions if p.kind == BIOS_TYPE]
+        if len(boots) > 1:
+            raise InstallError("The disk has multiple BIOS boot partitions")
+        bios = boots[0] if boots else None
+    boot_bytes = (0 if bios else MIB) if boot_mode is BootMode.BIOS else (0 if esp else ESP_BYTES)
     if mode is Mode.FREE_SPACE:
         if type(allocation_gib) is not int or not MIN_ALLOCATION_GIB <= allocation_gib <= available // GIB:
             raise InstallError(f"Allocation must fit the largest free region and be at least {MIN_ALLOCATION_GIB} GiB")
@@ -166,6 +188,7 @@ def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> P
         if allocation_gib is not None:
             raise InstallError("Replacement uses the available space; do not specify an allocation")
         total = available
-        if total - esp_bytes < MIN_ALLOCATION_GIB * GIB:
+        if total - boot_bytes < MIN_ALLOCATION_GIB * GIB:
             raise InstallError("Not enough space remains after preserving EFI partitions")
-    return Plan(disk, mode, allocation_gib, start + esp_bytes, total - esp_bytes, esp, None if esp else start)
+    return Plan(disk, mode, allocation_gib, start + boot_bytes, total - boot_bytes,
+                esp, start if boot_bytes else None, boot_mode, bios)

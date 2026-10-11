@@ -126,7 +126,7 @@ class Controller(QObject):
                 self.connectSelectedNetwork('')
         elif route == 'DriveSelect' and self._disk():
             try:
-                backend.plan_install(self._disk(), backend.Mode.REPLACE)
+                backend.plan_install(self._disk(), backend.Mode.REPLACE, boot_mode=backend.current_boot_mode())
                 self._go('DiskUse' if self._disk().partitions else 'Profile')
             except backend.InstallError as error:
                 self._set_error(str(error))

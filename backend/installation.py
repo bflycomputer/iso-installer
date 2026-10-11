@@ -11,13 +11,13 @@ import signal
 import tempfile
 
 from .command import run
-from .model import InstallError, Plan, Profile, plan_install
+from .model import BootMode, InstallError, Plan, Profile, current_boot_mode, plan_install
 from . import system, storage
 
 
 @dataclass(frozen=True)
 class Installed:
-    boot_entry: str
+    boot_entry: str | None
     warnings: tuple[str, ...] = ()
 
 
@@ -35,10 +35,12 @@ def _preflight(plan):
                 "mount", "mountpoint", "umount", "bsdtar", "arch-chroot", "efibootmgr", "sync")
     if any(shutil.which(command) is None for command in required):
         raise InstallError("The live environment is missing an installation dependency")
-    if plan != plan_install(plan.disk, plan.mode, plan.allocation_gib):
+    if plan != plan_install(plan.disk, plan.mode, plan.allocation_gib, boot_mode=plan.boot_mode):
         raise InstallError("The installation plan was modified")
-    if not Path("/sys/firmware/efi").is_dir():
-        raise InstallError("Pond requires UEFI")
+    if plan.boot_mode is not current_boot_mode():
+        raise InstallError("The firmware mode changed; prepare a new installation plan")
+    if plan.boot_mode is BootMode.BIOS:
+        return
     secure_boot = Path("/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c")
     # Firmware without Secure Boot support does not expose this variable.
     state = secure_boot.read_bytes() if secure_boot.exists() else b"\0" * 5
@@ -83,51 +85,59 @@ def _execute(plan, profile, archive, progress):
     boot_dir = None
     committed = False
     warnings = []
-    before_entries, before_order = _firmware()
+    uefi = plan.boot_mode is BootMode.UEFI
+    before_entries, before_order = _firmware() if uefi else ({}, "")
     try:
-        _validate_esp(plan, esp_mount)
-        esp, root = storage.create_partitions(plan, created)
+        if uefi:
+            _validate_esp(plan, esp_mount)
+        boot, root = storage.create_partitions(plan, created)
         storage.current_partition(plan.disk, root)
         system.mount_root(root, target)
-        system.provision(target, root, esp, archive, profile, progress)
-        # Update the ESP only after configuring the target system.
-        storage.current_partition(plan.disk, esp)
-        if plan.esp is None:
-            run(["wipefs", "--all", esp.path])
-            run(["mkfs.fat", "-F", "32", "-n", "Pond EFI", esp.path])
-        run(["mount", "-o", "umask=0077", esp.path, str(esp_mount)])
-        run(["mount", "--bind", str(esp_mount), str(target / "boot/efi")])
+        system.provision(target, root, boot if uefi else None, archive, profile, progress)
+        storage.current_partition(plan.disk, boot)
+        if uefi:
+            esp = boot
+            # Update the ESP only after configuring the target system.
+            if plan.esp is None:
+                run(["wipefs", "--all", esp.path])
+                run(["mkfs.fat", "-F", "32", "-n", "Pond EFI", esp.path])
+            run(["mount", "-o", "umask=0077", esp.path, str(esp_mount)])
+            run(["mount", "--bind", str(esp_mount), str(target / "boot/efi")])
         run(["arch-chroot", str(target), "/usr/share/libalpm/scripts/pond-grub-update"])
         if not (target / "boot/grub/grub.cfg").stat().st_size:
             raise InstallError("Pond's boot menu is empty")
         run(["arch-chroot", str(target), "grub-script-check", "/boot/grub/grub.cfg"])
-        candidate = esp_mount / "EFI/pond"
-        candidate.mkdir(parents=True, exist_ok=False)
-        boot_dir = candidate
-        loader = candidate / "grubx64.efi"
-        shutil.copyfile(target / "root/grubx64.efi", loader)
-        if not loader.stat().st_size:
-            raise InstallError("Pond's EFI loader is empty")
-        (target / "root/grubx64.efi").unlink()
-        run(["sync"])
-        # Read back even on failure: firmware may have created an entry before
-        # reporting an error. Only our new Pond entry is eligible for cleanup.
-        result = run(["efibootmgr", "--create", "--disk", plan.disk.path,
-                      "--part", str(esp.number), "--label", "Pond", "--loader", r"\EFI\pond\grubx64.efi"], check=False)
-        after_entries, _ = _firmware()
-        added = [n for n, label in after_entries.items() if n not in before_entries and label == "Pond"]
-        if len(added) == 1:
-            entry = added[0]
-        if result.returncode or entry is None:
-            raise InstallError("Pond's persistent firmware entry could not be created")
-        details = run(["efibootmgr", "--verbose"]).stdout.casefold()
-        line = next((line for line in details.splitlines() if line.startswith(f"boot{entry.lower()}")), "")
-        if (f"hd({esp.number},gpt,{esp.uuid}," not in line
-                or not re.search(r"/(?:file\()?\\efi\\pond\\grubx64\.efi(?:\)|$)", line)):
-            raise InstallError("Pond's firmware entry points to an unexpected target")
-        run(["efibootmgr", "--bootorder", ",".join([entry] + [n for n in before_order.split(",") if n and n != entry])])
-        if run(["efibootmgr", "--bootnext", entry], check=False).returncode:
-            warnings.append("One-time boot selection failed; the persistent Pond entry is installed")
+        if uefi:
+            candidate = esp_mount / "EFI/pond"
+            candidate.mkdir(parents=True, exist_ok=False)
+            boot_dir = candidate
+            loader = candidate / "grubx64.efi"
+            shutil.copyfile(target / "root/grubx64.efi", loader)
+            if not loader.stat().st_size:
+                raise InstallError("Pond's EFI loader is empty")
+            (target / "root/grubx64.efi").unlink()
+            run(["sync"])
+            # Read back even on failure: firmware may have created an entry before
+            # reporting an error. Only our new Pond entry is eligible for cleanup.
+            result = run(["efibootmgr", "--create", "--disk", plan.disk.path,
+                          "--part", str(esp.number), "--label", "Pond", "--loader", r"\EFI\pond\grubx64.efi"], check=False)
+            after_entries, _ = _firmware()
+            added = [n for n, label in after_entries.items() if n not in before_entries and label == "Pond"]
+            if len(added) == 1:
+                entry = added[0]
+            if result.returncode or entry is None:
+                raise InstallError("Pond's persistent firmware entry could not be created")
+            details = run(["efibootmgr", "--verbose"]).stdout.casefold()
+            line = next((line for line in details.splitlines() if line.startswith(f"boot{entry.lower()}")), "")
+            if (f"hd({esp.number},gpt,{esp.uuid}," not in line
+                    or not re.search(r"/(?:file\()?\\efi\\pond\\grubx64\.efi(?:\)|$)", line)):
+                raise InstallError("Pond's firmware entry points to an unexpected target")
+            run(["efibootmgr", "--bootorder", ",".join([entry] + [n for n in before_order.split(",") if n and n != entry])])
+            if run(["efibootmgr", "--bootnext", entry], check=False).returncode:
+                warnings.append("One-time boot selection failed; the persistent Pond entry is installed")
+        else:
+            run(["arch-chroot", str(target), "grub-install", "--target=i386-pc", "--recheck", plan.disk.path])
+            run(["sync"])
         committed = True
         progress(0.99)
     finally:

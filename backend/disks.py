@@ -30,7 +30,8 @@ def options(disk):
         if mode is backend.Mode.FREE_SPACE and not disk.partitions:
             continue
         try:
-            plan = backend.plan_install(disk, mode, max_allocation_gib(disk) if mode is backend.Mode.FREE_SPACE else None)
+            plan = backend.plan_install(disk, mode, max_allocation_gib(disk) if mode is backend.Mode.FREE_SPACE else None,
+                                        boot_mode=backend.current_boot_mode())
         except backend.InstallError:
             continue
         choices.append({'mode': mode.value, 'plan': plan, 'preservesEfi': plan.esp is not None})
