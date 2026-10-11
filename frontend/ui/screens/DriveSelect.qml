@@ -250,7 +250,7 @@ Item {
         z: 4
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.scrollMode ? 1033 : 787
-        primaryEnabled: controller.installOptions.length > 0
+        primaryEnabled: root.rowCount > 0
         label: "Confirm"
     }
 }

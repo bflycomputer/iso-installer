@@ -142,11 +142,13 @@ def max_allocation_gib(disk):
 def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None) -> Plan:
     if not isinstance(mode, Mode):
         raise InstallError("Unknown installation mode")
-    if disk.busy or disk.read_only or not disk.identity or disk.size < 21 * GIB:
+    if disk.busy or disk.read_only or not disk.identity:
         raise InstallError("The selected disk is unavailable or in use")
+    if disk.size < 21 * GIB:
+        raise InstallError("Pond needs at least 20GB of space")
     esps = [p for p in disk.partitions if p.kind == ESP_TYPE]
     if len(esps) > 1:
-        raise InstallError("Multiple EFI partitions; cannot select one unambiguously")
+        raise InstallError(f"This disk has {len(esps)} EFI partitions, wipe it before attempting to install")
     esp = esps[0] if esps else None
     if mode is Mode.FREE_SPACE and disk.table != "gpt":
         raise InstallError("Free-space installation requires GPT")

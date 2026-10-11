@@ -124,11 +124,12 @@ class Controller(QObject):
                 self._go('WifiPassword')
             else:
                 self.connectSelectedNetwork('')
-        elif route == 'DriveSelect':
-            if not self._storage_ready or not self._options():
-                self._set_error('Select a disk with enough usable space for Pond.')
-            else:
+        elif route == 'DriveSelect' and self._disk():
+            try:
+                backend.plan_install(self._disk(), backend.Mode.REPLACE)
                 self._go('DiskUse' if self._disk().partitions else 'Profile')
+            except backend.InstallError as error:
+                self._set_error(str(error))
         elif route == 'DiskUse':
             try:
                 option = self._option_data()
