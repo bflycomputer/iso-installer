@@ -20,5 +20,7 @@ python-libblockdev
 qemu-guest-agent
 qt6-wayland
 syslinux
+usb_modeswitch
+usbmuxd
 virtualbox-guest-utils-nox
 wireless-regdb
