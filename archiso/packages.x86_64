@@ -27,4 +27,5 @@ syslinux
 usb_modeswitch
 usbmuxd
 virtualbox-guest-utils-nox
+vulkan-nouveau
 wireless-regdb
