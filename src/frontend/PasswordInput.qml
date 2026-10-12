@@ -50,7 +50,7 @@ TextInput {
                 required property int index
                 width: 12
                 height: 12
-                source: "../assets/icons/password-mask-"
+                source: "assets/icons/password-mask-"
                         + ["plant", "lily-pad", "hexagon", "plant", "leaf", "lily-pad", "hexagon", "plant"][index % 8]
                         + (input.whiteMask ? "-white.svg" : ".svg")
                 sourceSize: Qt.size(24, 24)

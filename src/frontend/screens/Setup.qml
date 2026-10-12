@@ -227,7 +227,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 24
                 height: 24
-                source: "../../assets/icons/chevron-vertical.svg"
+                source: "../assets/icons/chevron-vertical.svg"
                 sourceSize: Qt.size(48, 48)
             }
         }
@@ -290,7 +290,7 @@ Item {
         y: 758
         width: 1226
         height: 1532
-        source: "../../assets/illustrations/moon.png"
+        source: "../assets/illustrations/moon.png"
         sourceSize: Qt.size(1226, 1532)
     }
 }

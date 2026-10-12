@@ -52,8 +52,8 @@ Item {
                 width: root.diskWidth + 0.7732
                 height: root.diskHeight + 0.7732
                 source: disk.index === root.selectedIndex
-                        ? "../assets/illustrations/disk-active.svg"
-                        : "../assets/illustrations/disk-idle.svg"
+                        ? "assets/illustrations/disk-active.svg"
+                        : "assets/illustrations/disk-idle.svg"
                 sourceSize: Qt.size(464, 302)
             }
 

@@ -17,7 +17,7 @@ Item {
         width: 32.35
         height: 31.03
         fillMode: Image.Stretch
-        source: "../assets/icons/arrow-back.svg"
+        source: "assets/icons/arrow-back.svg"
         sourceSize: Qt.size(320, 320)
     }
 

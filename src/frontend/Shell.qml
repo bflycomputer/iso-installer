@@ -258,7 +258,7 @@ Rectangle {
             y: 10
             width: 100
             height: 100
-            source: "../assets/icons/pond-logo-dark.svg"
+            source: "assets/icons/pond-logo-dark.svg"
             sourceSize: Qt.size(200, 200)
         }
 
@@ -339,14 +339,14 @@ Rectangle {
 
             Image {
                 anchors.fill: parent
-                source: "../assets/icons/power.svg"
+                source: "assets/icons/power.svg"
                 sourceSize: Qt.size(160, 160)
                 visible: !powerArea.containsMouse
             }
 
             Image {
                 anchors.fill: parent
-                source: "../assets/icons/power-hover.svg"
+                source: "assets/icons/power-hover.svg"
                 sourceSize: Qt.size(160, 160)
                 visible: powerArea.containsMouse
             }

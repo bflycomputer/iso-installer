@@ -118,7 +118,7 @@ Rectangle {
                         height: 81
                         visible: block.blockState === "filled" || block.blockState === "complete"
                         source: block.blockState === "complete"
-                                ? "../../assets/animations/complete.svg" : "../../assets/animations/filled.svg"
+                                ? "../assets/animations/complete.svg" : "../assets/animations/filled.svg"
                         sourceSize: Qt.size(162, 162)
                     }
 
@@ -128,7 +128,7 @@ Rectangle {
                         clip: true
 
                         readonly property int animation: (block.index % 5) + 1
-                        readonly property string frameSource: "../../assets/animations/"
+                        readonly property string frameSource: "../assets/animations/"
                             + root.loaderFrames[animation - 1][root.bufferFrame]
 
                         Image {
@@ -254,7 +254,7 @@ Rectangle {
             y: 10
             width: 100
             height: 100
-            source: "../../assets/icons/pond-logo-dark.svg"
+            source: "../assets/icons/pond-logo-dark.svg"
             sourceSize: Qt.size(200, 200)
         }
 

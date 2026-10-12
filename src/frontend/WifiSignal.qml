@@ -11,7 +11,7 @@ Image {
     width: 20
     height: 20
 
-    source: Qt.resolvedUrl("../assets/icons/wifi-signal-" + signal.level
+    source: Qt.resolvedUrl("assets/icons/wifi-signal-" + signal.level
                            + (signal.active ? "-active.svg" : "-idle.svg"))
     sourceSize: Qt.size(40, 40)
 }

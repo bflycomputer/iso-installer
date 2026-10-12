@@ -31,8 +31,8 @@ Row {
             anchors.centerIn: parent
             width: 24
             height: 24
-            source: backPointer.containsMouse ? "../assets/icons/navigation-back-hover.svg"
-                                              : "../assets/icons/navigation-back.svg"
+            source: backPointer.containsMouse ? "assets/icons/navigation-back-hover.svg"
+                                              : "assets/icons/navigation-back.svg"
             sourceSize: Qt.size(48, 48)
         }
 

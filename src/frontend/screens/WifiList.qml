@@ -91,8 +91,8 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 16
                     height: 16
-                    source: netRow.index === root.activeRow ? "../../assets/icons/lock-active.svg"
-                                                             : "../../assets/icons/lock-idle.svg"
+                    source: netRow.index === root.activeRow ? "../assets/icons/lock-active.svg"
+                                                             : "../assets/icons/lock-idle.svg"
                     sourceSize: Qt.size(32, 32)
                 }
 

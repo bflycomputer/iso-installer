@@ -127,17 +127,17 @@ Item {
     function wifiAsset() {
         const state = wifiState()
         if (state === "active")
-            return "../assets/progress/wifi-active.svg"
+            return "assets/progress/wifi-active.svg"
         if (state === "completed")
-            return "../assets/progress/wifi-completed.svg"
-        return "../assets/progress/wifi-idle.svg"
+            return "assets/progress/wifi-completed.svg"
+        return "assets/progress/wifi-idle.svg"
     }
 
     function profileAssetForCount(count) {
         const clamped = Math.max(0, Math.min(4, count))
         if (clamped <= 0)
-            return "../assets/progress/profile-active.svg"
-        return "../assets/progress/profile-fields-" + clamped + ".svg"
+            return "assets/progress/profile-active.svg"
+        return "assets/progress/profile-fields-" + clamped + ".svg"
     }
 
     function activeProfileAsset() {
@@ -145,8 +145,8 @@ Item {
             return profileAssetForCount(profileCompleted)
         if (profileActive === 0 && profileCompleted === 0)
             return profileBlinkOn
-                    ? "../assets/progress/profile-first-field-on.svg"
-                    : "../assets/progress/profile-first-field-off.svg"
+                    ? "assets/progress/profile-first-field-on.svg"
+                    : "assets/progress/profile-first-field-off.svg"
         const prior = Math.max(profileCompleted, profileActive)
         return profileAssetForCount(profileBlinkOn ? profileActive + 1 : prior)
     }
@@ -172,14 +172,14 @@ Item {
 
         Image {
             anchors.fill: parent
-            source: "../assets/icons/escape.svg"
+            source: "assets/icons/escape.svg"
             sourceSize: Qt.size(100, 40)
             visible: !escapeControl.down
         }
 
         Image {
             anchors.fill: parent
-            source: "../assets/icons/escape-pressed.svg"
+            source: "assets/icons/escape-pressed.svg"
             sourceSize: Qt.size(100, 40)
             visible: escapeControl.down
         }
@@ -211,7 +211,7 @@ Item {
 
         Image {
             anchors.fill: parent
-            source: "../assets/progress/language-active.svg"
+            source: "assets/progress/language-active.svg"
             sourceSize: Qt.size(60, 50)
             visible: tree.languageState() === "active"
         }
@@ -225,7 +225,7 @@ Item {
                 width: 25
                 height: 30
                 rotation: 90
-                source: "../assets/progress/language-completed.svg"
+                source: "assets/progress/language-completed.svg"
                 sourceSize: Qt.size(50, 60)
             }
             Label {
@@ -379,7 +379,7 @@ Item {
         width: 30
         height: 30
         source: tree.stage === "profile"
-                ? tree.activeProfileAsset() : "../assets/progress/profile-idle.svg"
+                ? tree.activeProfileAsset() : "assets/progress/profile-idle.svg"
         sourceSize: Qt.size(60, 60)
     }
 }

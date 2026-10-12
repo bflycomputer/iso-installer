@@ -156,8 +156,8 @@ Item {
                     anchors.centerIn: parent
                     width: 20
                     height: 20
-                    source: root.passwordVisible ? "../../assets/icons/eye-closed.svg"
-                                                 : "../../assets/icons/eye-open.svg"
+                    source: root.passwordVisible ? "../assets/icons/eye-closed.svg"
+                                                 : "../assets/icons/eye-open.svg"
                     sourceSize: Qt.size(40, 40)
                 }
                 MouseArea {
@@ -235,8 +235,8 @@ Item {
                 objectName: "wifiJoiningLoader"
                 width: 50
                 height: 50
-                source: joining.frame === 0 ? "../../assets/animations/joining-straight.svg"
-                                            : "../../assets/animations/joining-diagonal.svg"
+                source: joining.frame === 0 ? "../assets/animations/joining-straight.svg"
+                                            : "../assets/animations/joining-diagonal.svg"
                 sourceSize: Qt.size(100, 100)
             }
 

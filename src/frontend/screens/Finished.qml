@@ -80,7 +80,7 @@ Rectangle {
             y: -96
             width: 428
             height: 388
-            source: "../../assets/illustrations/lilypad.png"
+            source: "../assets/illustrations/lilypad.png"
             imageBounds: Qt.rect(-117.87, 89.51, 421.73, 527.17)
             imageRotation: -33.67
             accent: Qt.rect(338, 126, 80, 80)
@@ -92,7 +92,7 @@ Rectangle {
             y: 49
             width: 319
             height: 400
-            source: "../../assets/illustrations/butterfly.png"
+            source: "../assets/illustrations/butterfly.png"
             imageBounds: Qt.rect(-0.64, -0.66, 314.45, 393.06)
         }
 
@@ -102,7 +102,7 @@ Rectangle {
             y: 889
             width: 303
             height: 275
-            source: "../../assets/illustrations/lilypad.png"
+            source: "../assets/illustrations/lilypad.png"
             imageBounds: Qt.rect(380.93, 99.98, 299.78, 374.73)
             imageRotation: 119.97
         }
@@ -159,7 +159,7 @@ Rectangle {
             y: 390
             width: 140
             height: 140
-            source: "../../assets/icons/pond-logo.svg"
+            source: "../assets/icons/pond-logo.svg"
             sourceSize: Qt.size(280, 280)
             mipmap: true
         }

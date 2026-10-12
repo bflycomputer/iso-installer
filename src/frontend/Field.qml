@@ -63,7 +63,7 @@ Item {
         y: 22
         width: 24
         height: 24
-        source: field.active ? "../assets/icons/dot-active.svg" : "../assets/icons/dot-idle.svg"
+        source: field.active ? "assets/icons/dot-active.svg" : "assets/icons/dot-idle.svg"
         sourceSize: Qt.size(48, 48)
     }
 }

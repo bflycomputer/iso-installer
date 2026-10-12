@@ -35,10 +35,10 @@ QtObject {
     readonly property string displayFont: "Pond Gramercy"
     readonly property string displayBookFont: "Pond Gramercy Book"
     property FontLoader plexMonoMedium: FontLoader {
-        source: Qt.resolvedUrl("../assets/fonts/ibm-plex-mono-medium.ttf")
+        source: Qt.resolvedUrl("assets/fonts/ibm-plex-mono-medium.ttf")
     }
     property FontLoader onest: FontLoader {
-        source: Qt.resolvedUrl("../assets/fonts/onest.ttf")
+        source: Qt.resolvedUrl("assets/fonts/onest.ttf")
     }
     readonly property font monoXs: Qt.font({
         family: "IBM Plex Mono",
