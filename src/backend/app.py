@@ -24,7 +24,7 @@ def main():
     controller = Controller()
     app.aboutToQuit.connect(controller.close)
     engine.rootContext().setContextProperty('controller', controller)
-    engine.load(QUrl.fromLocalFile(str(Path(__file__).parent.parent / 'frontend/ui/Main.qml')))
+    engine.load(QUrl.fromLocalFile(str(Path(__file__).parent.parent / 'frontend/Main.qml')))
     if not engine.rootObjects():
         controller.close()
         return 1

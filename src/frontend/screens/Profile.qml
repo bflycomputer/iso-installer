@@ -10,6 +10,7 @@ Item {
     readonly property bool childOwnsFocus: activeRow < fields.count
     readonly property int rowCount: rows.length + 1
     property int activeRow: 0
+    property bool revealFocused: false
     property bool validationRequested: false
 
     readonly property var rows: [
@@ -21,13 +22,14 @@ Item {
     readonly property int completedCount: rows.filter((row, index) => fieldCompleted(index)).length
     readonly property bool canSubmit: rows.every(row => controller[row.error] === "")
 
-    Keys.onTabPressed: moveSelection(1)
-    Keys.onBacktabPressed: moveSelection(-1)
+    Keys.onTabPressed: function(event) { moveFocus(event.modifiers & Qt.ShiftModifier ? -1 : 1) }
+    Keys.onBacktabPressed: moveFocus(-1)
 
     function activateRow(index) {
         if (index < 0 || index >= rowCount)
             return
         activeRow = index
+        revealFocused = false
         if (index === fields.count) {
             forceActiveFocus()
             return
@@ -40,8 +42,27 @@ Item {
     function moveSelection(delta) { activateRow((activeRow + delta + rowCount) % rowCount) }
     function chooseIndex(index) { activateRow(index) }
 
+    function moveFocus(delta) {
+        const row = fields.itemAt(activeRow)
+        if (row && row.isPassword && (delta > 0 ? !revealFocused : revealFocused)) {
+            if (delta > 0)
+                row.focusReveal()
+            else
+                activateRow(activeRow)
+            return
+        }
+        const next = (activeRow + delta + rowCount) % rowCount
+        const nextRow = fields.itemAt(next)
+        if (delta < 0 && nextRow && nextRow.isPassword)
+            nextRow.focusReveal()
+        else
+            activateRow(next)
+    }
+
     function accept() {
-        if (activeRow < fields.count)
+        if (revealFocused)
+            fields.itemAt(activeRow).togglePasswordVisibility()
+        else if (activeRow < fields.count)
             activateRow(activeRow + 1)
         else
             submit()
@@ -89,14 +110,18 @@ Item {
             id: row
             required property int index
             readonly property bool complete: root.fieldCompleted(index)
+            readonly property bool isPassword: index === 1 || index === 2
+            property bool passwordVisible: false
             function focusInput() { input.forceActiveFocus() }
+            function focusReveal() { reveal.forceActiveFocus() }
+            function togglePasswordVisibility() { passwordVisible = !passwordVisible }
 
             x: 571
             y: 405 + index * 80
             labelWidth: 201
             compactLabel: index >= 2
             label: root.rows[index].label
-            active: index === root.activeRow
+            active: index === root.activeRow && !root.revealFocused
             labelColor: active ? Theme.bg : Theme.textDim
             onClicked: root.activateRow(index)
             Component.onCompleted: if (active) Qt.callLater(focusInput)
@@ -116,15 +141,66 @@ Item {
                 id: input
                 objectName: "profileInput" + row.index
                 x: 15
-                width: 329
+                width: row.isPassword ? reveal.x - x - 8 : 329
                 height: 48
                 text: controller[root.rows[row.index].key]
-                masked: row.index === 1 || row.index === 2
+                masked: row.isPassword && !row.passwordVisible
                 inputMethodHints: Qt.ImhNoPredictiveText
-                                  | (row.index === 1 || row.index === 2 ? Qt.ImhSensitiveData : 0)
+                                  | (row.isPassword ? Qt.ImhSensitiveData : 0)
                 Keys.forwardTo: root.shell ? [root.shell] : []
                 onTextEdited: controller[root.rows[row.index].key] = text
-                onActiveFocusChanged: if (activeFocus && root.activeRow !== row.index) root.activeRow = row.index
+                onActiveFocusChanged: {
+                    if (activeFocus) {
+                        root.activeRow = row.index
+                        root.revealFocused = false
+                    }
+                }
+            }
+
+            Rectangle {
+                id: reveal
+                objectName: "profilePasswordReveal" + row.index
+                visible: row.isPassword
+                x: 319
+                y: 8
+                width: 32
+                height: 32
+                radius: 4
+                color: revealPointer.containsMouse || activeFocus ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                Accessible.role: Accessible.Button
+                Accessible.name: (row.passwordVisible ? "Hide " : "Show ") + root.rows[row.index].label.toLowerCase()
+                Accessible.checkable: true
+                Accessible.checked: row.passwordVisible
+                Accessible.onPressAction: row.togglePasswordVisibility()
+                Keys.forwardTo: root.shell ? [root.shell] : []
+                Keys.onSpacePressed: function(event) {
+                    if (!event.isAutoRepeat)
+                        row.togglePasswordVisibility()
+                    event.accepted = true
+                }
+                onActiveFocusChanged: {
+                    if (activeFocus) {
+                        root.activeRow = row.index
+                        root.revealFocused = true
+                    }
+                }
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 20
+                    height: 20
+                    source: row.passwordVisible ? "../assets/icons/eye-open.svg"
+                                                : "../assets/icons/eye-closed.svg"
+                    sourceSize: Qt.size(40, 40)
+                }
+
+                MouseArea {
+                    id: revealPointer
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: row.togglePasswordVisibility()
+                }
             }
         }
     }
