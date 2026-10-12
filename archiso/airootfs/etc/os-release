@@ -1,0 +1,8 @@
+NAME="Pond Installer"
+PRETTY_NAME="Pond Installer"
+ID=pond-installer
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="38;2;203;226;91"
+HOME_URL="https://butterfly.so/"
+LOGO=pond
