@@ -254,7 +254,7 @@ Rectangle {
             y: 10
             width: 100
             height: 100
-            source: "../../assets/icons/pond-letters.svg"
+            source: "../../assets/icons/pond-logo-dark.svg"
             sourceSize: Qt.size(200, 200)
         }
 
