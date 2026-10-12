@@ -2,6 +2,7 @@ amd-ucode
 arch-install-scripts
 base
 btrfs-progs
+cage
 capitaine-cursors
 dosfstools
 efibootmgr
@@ -12,10 +13,10 @@ libblockdev-part
 linux
 linux-firmware
 linux-firmware-marvell
+mesa
 mkinitcpio
 mkinitcpio-archiso
 networkmanager
-niri
 open-vm-tools
 pyside6
 python-libblockdev
