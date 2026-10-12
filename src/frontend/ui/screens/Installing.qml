@@ -10,7 +10,7 @@ Rectangle {
     // words as coloured tags.
     readonly property string deviceName: controller.deviceName ? String(controller.deviceName) : "Pond"
 
-    color: "#1a1409"
+    color: Theme.bg
 
     readonly property real designScale: Math.min(width / 1728, height / 1117)
     property int tick: 0

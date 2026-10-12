@@ -10,7 +10,7 @@ Rectangle {
     readonly property string failureDetails: String(controller.warnings)
     readonly property real designScale: Math.min(width / 1728, height / 1117)
 
-    color: "#1a1409"
+    color: Theme.bg
     focus: true
 
     Keys.onPressed: function(event) {

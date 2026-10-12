@@ -6,7 +6,7 @@ Window {
     id: window
     visible: true
     visibility: Window.FullScreen
-    color: "#1a1409"
+    color: Theme.bg
     title: "Pond Installer"
 
     readonly property bool standaloneScreen: (controller.route === "Installing" || controller.route === "Finished")

@@ -8,7 +8,7 @@ QtObject {
     readonly property int canvasW: 1728
     readonly property int canvasH: 1117
 
-    readonly property color bg: "#1a1409"
+    readonly property color bg: "#1a1419"
     readonly property color lavender: "#cba6f7"
     readonly property color green: "#cbe25b"
     readonly property color surface: "#33273d"
