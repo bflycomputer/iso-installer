@@ -2,6 +2,7 @@ amd-ucode
 arch-install-scripts
 base
 btrfs-progs
+capitaine-cursors
 dosfstools
 efibootmgr
 hyperv
@@ -14,11 +15,13 @@ linux-firmware-marvell
 mkinitcpio
 mkinitcpio-archiso
 networkmanager
+niri
 open-vm-tools
 pyside6
 python-libblockdev
 qemu-guest-agent
 qt6-wayland
+sudo
 syslinux
 usb_modeswitch
 usbmuxd

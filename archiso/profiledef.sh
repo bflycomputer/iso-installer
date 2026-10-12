@@ -15,4 +15,8 @@ airootfs_image_type="erofs"
 airootfs_image_tool_options=('-zlzma,109' -E 'ztailpacking')
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
+  ["/etc/gshadow"]="0:0:400"
+  ["/etc/sudoers.d"]="0:0:750"
+  ["/etc/sudoers.d/pond-installer"]="0:0:440"
+  ["/usr/local/bin/pond-installer"]="0:0:755"
 )

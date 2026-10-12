@@ -1,0 +1,4 @@
+#!/bin/sh
+export QT_QPA_PLATFORM=wayland QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+cd /usr/share/pond-installer || exit 1
+exec /usr/bin/python -m backend "$@"
