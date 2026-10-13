@@ -72,7 +72,6 @@ Item {
         y: 454
         showStatus: !root.editing
         busy: root.connecting
-        failed: root.joinFailed
         message: root.connecting ? "Joining" : "Failed to connect"
 
         Item {

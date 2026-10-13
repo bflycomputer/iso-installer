@@ -5,7 +5,6 @@ Rectangle {
 
     property bool showStatus: true
     property bool busy: false
-    property bool failed: false
     property string message: ""
 
     width: 358
@@ -57,7 +56,7 @@ Rectangle {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         text: root.message
-        color: root.failed ? Theme.statusError : Theme.lavender
+        color: Theme.statusError
         font: Theme.xlItalic
         lh: Theme.lhXl
     }

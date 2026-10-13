@@ -139,7 +139,6 @@ Item {
         y: 454
         visible: root.showStatus
         busy: root.busy
-        failed: root.joinFailed || root.scanFailed
         message: root.connecting ? "Joining"
                : root.joinFailed ? "Failed to connect"
                : root.busy ? "Scanning"
