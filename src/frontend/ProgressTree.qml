@@ -6,6 +6,7 @@ Item {
     id: tree
 
     property string stage: ""
+    property int activeDecision: -1
     property string localeCode: "EN"
 
     // One-based card choices already made. The value, not the step number, is
@@ -27,17 +28,15 @@ Item {
     property bool escapePressed: false
     signal escapeClicked
 
-    readonly property int activeDecision: decisionIndexForStage(stage)
-    readonly property int visibleDecisionCount: branchDepth
     readonly property bool profileVisible: includeProfile || stage === "profile"
-    readonly property bool compactHeader: visibleDecisionCount === 1
+    readonly property bool compactHeader: branchDepth === 1
                                                && !profileVisible
     readonly property int baseX: compactHeader ? 32 : 0
     readonly property int contentHeight: {
         if (profileVisible)
             return Math.max(150, profileY + 30)
-        return Math.max(150, decisionTop(visibleDecisionCount - 1)
-                              + decisionHeight(visibleDecisionCount - 1))
+        return Math.max(150, decisionTop(branchDepth - 1)
+                              + decisionHeight(branchDepth - 1))
     }
 
     implicitWidth: 208
@@ -49,19 +48,14 @@ Item {
     readonly property int wifiX: baseX + 105
     readonly property int decisionOneX: baseX + 148
     readonly property int profileY: {
-        if (visibleDecisionCount <= 1)
+        if (branchDepth <= 1)
             return 37
-        if (visibleDecisionCount === 2)
+        if (branchDepth === 2)
             return 96
         return 141
     }
 
     property bool profileBlinkOn: true
-
-    function decisionIndexForStage(value) {
-        const match = /^decision([1-3])$/.exec(value)
-        return match ? Number(match[1]) - 1 : -1
-    }
 
     function stateColor(state) {
         if (state === "active")
@@ -117,11 +111,6 @@ Item {
         if (index === 0)
             return decisionOneX
         return index === 1 ? 181 : 179
-    }
-
-    function languageText() {
-        const normalized = String(localeCode || "EN").trim().toUpperCase()
-        return normalized.length >= 2 ? normalized.slice(0, 2) : "EN"
     }
 
     function wifiAsset() {
@@ -230,7 +219,7 @@ Item {
             }
             Label {
                 anchors.fill: parent
-                text: tree.languageText()
+                text: tree.localeCode
                 color: Theme.lavender
                 font: Theme.monoXs
                 lh: 12
@@ -288,26 +277,26 @@ Item {
     // First decision -> second decision is the single elbow in the vertical
     // part of the breadcrumb. Later paths are 14px straight segments.
     Rectangle {
-        visible: tree.visibleDecisionCount >= 2 || tree.profileVisible
+        visible: tree.branchDepth >= 2 || tree.profileVisible
         x: tree.decisionOneX + 31
         y: 19
         width: 193 - x
         height: 1
-        color: tree.stateColor(tree.visibleDecisionCount >= 2
+        color: tree.stateColor(tree.branchDepth >= 2
                                ? tree.decisionState(1) : tree.profileState())
     }
     Rectangle {
-        visible: tree.visibleDecisionCount >= 2 || tree.profileVisible
+        visible: tree.branchDepth >= 2 || tree.profileVisible
         x: 192
         y: 19
         width: 1
-        height: tree.visibleDecisionCount >= 2 ? 23 : 18
-        color: tree.stateColor(tree.visibleDecisionCount >= 2
+        height: tree.branchDepth >= 2 ? 23 : 18
+        color: tree.stateColor(tree.branchDepth >= 2
                                ? tree.decisionState(1) : tree.profileState())
     }
 
     Repeater {
-        model: tree.visibleDecisionCount
+        model: tree.branchDepth
 
         delegate: Item {
             id: decisionNode
@@ -352,19 +341,19 @@ Item {
     }
 
     Rectangle {
-        visible: tree.visibleDecisionCount >= 3
-                         || (tree.profileVisible && tree.visibleDecisionCount >= 2)
+        visible: tree.branchDepth >= 3
+                         || (tree.profileVisible && tree.branchDepth >= 2)
         x: 192
         y: 82
         width: 1
         height: 14
-        color: tree.stateColor(tree.visibleDecisionCount >= 3
+        color: tree.stateColor(tree.branchDepth >= 3
                                ? tree.decisionState(2)
                                : tree.profileState())
     }
 
     Rectangle {
-        visible: tree.profileVisible && tree.visibleDecisionCount >= 3
+        visible: tree.profileVisible && tree.branchDepth >= 3
         x: 192
         y: 130
         width: 1

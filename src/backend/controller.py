@@ -230,36 +230,13 @@ class Controller(QObject):
         self._wifi.close()
         self._probe_thread.join()
 
-    def _choices(self, row):
-        return (self._keyboards, self._languages, self._timezones)[row]
-
-    @Slot(int, result=int)
-    def setupChoiceIndex(self, row):
-        if not 0 <= row <= 2:
-            return 0
-        for index, item in enumerate(self._choices(row)):
-            if (row == 0 and item['value'] == self._layout) or (row == 2 and item['value'] == self._timezone) \
-                    or (row == 1 and item['value'] == self._locale):
-                return index
-        return 0
-
-    @Slot(int, int)
-    def selectSetupChoice(self, row, index):
-        if self._busy or not 0 <= row <= 2 or not 0 <= index < len(self._choices(row)):
+    def _set_layout(self, layout):
+        if self._busy or layout == self._layout:
             return
-        item = self._choices(row)[index]
-        if row == 0:
-            self._layout = item['value']
-        elif row == 1:
-            self._locale = item['value']
-        else:
-            self._timezone = item['value']
+        self._layout = layout
         self.setupChanged.emit()
-        if row == 0 and self._layout != os.environ.get('XKB_DEFAULT_LAYOUT', self._layout):
-            self.restartRequested.emit(self._layout)
-
-    def _label(self, row):
-        return self._choices(row)[self.setupChoiceIndex(row)]['label']
+        if layout != os.environ.get('XKB_DEFAULT_LAYOUT', layout):
+            self.restartRequested.emit(layout)
 
     def _setter(name, signal):
         def set_value(self, value):
@@ -278,11 +255,9 @@ class Controller(QObject):
     languageChoices = Property(str, lambda self: json.dumps(self._languages), constant=True)
     keyboardChoices = Property(str, lambda self: json.dumps(self._keyboards), constant=True)
     timezoneChoices = Property(str, lambda self: json.dumps(self._timezones), constant=True)
-    localeName = Property(str, lambda self: self._locale, notify=setupChanged)
-    languageLabel = Property(str, lambda self: self._label(1), notify=setupChanged)
-    keyboardLabel = Property(str, lambda self: self._label(0), notify=setupChanged)
-    timezone = Property(str, lambda self: self._timezone, notify=setupChanged)
-    timezoneLabel = Property(str, lambda self: self._label(2), notify=setupChanged)
+    localeName = Property(str, lambda self: self._locale, _setter('_locale', 'setupChanged'), notify=setupChanged)
+    layout = Property(str, lambda self: self._layout, _set_layout, notify=setupChanged)
+    timezone = Property(str, lambda self: self._timezone, _setter('_timezone', 'setupChanged'), notify=setupChanged)
     selectedNetwork = Property(int, lambda self: self._network, _setter('_network', 'selectedNetworkChanged'), notify=selectedNetworkChanged)
     selectedSsid = Property(str, lambda self: self._wifi.get(self._network).get('ssid', ''), notify=selectedNetworkChanged)
     selectedNetworkStrength = Property(int, lambda self: int(self._wifi.get(self._network).get('strength', 0)), notify=selectedNetworkChanged)

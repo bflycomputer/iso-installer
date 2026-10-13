@@ -27,9 +27,8 @@ Item {
         if (activeRow !== 2)
             return choices(activeRow)
         const current = controller.timezone
-        const indexed = timezoneChoices.map((item, index) => Object.assign({}, item, { choiceIndex: index }))
-        const ordered = indexed.filter(item => item.value === current)
-            .concat(indexed.filter(item => item.value !== current))
+        const ordered = timezoneChoices.filter(item => item.value === current)
+            .concat(timezoneChoices.filter(item => item.value !== current))
         const query = dropdown.query.trim().toLocaleLowerCase()
         return ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query)
             || (" " + [item.label, item.names, item.detail].join(" ")).toLocaleLowerCase().includes(" " + query))
@@ -45,9 +44,22 @@ Item {
         return row === 0 ? keyboardChoices : row === 1 ? languageChoices : timezoneChoices
     }
 
+    function currentIndex(row) {
+        const value = row === 0 ? controller.layout : row === 1 ? controller.localeName : controller.timezone
+        return Math.max(0, choices(row).findIndex(item => item.value === value))
+    }
+
     function currentValue(row) {
-        return row === 0 ? controller.keyboardLabel
-             : row === 1 ? controller.languageLabel : controller.timezoneLabel
+        return choices(row)[currentIndex(row)].label
+    }
+
+    function setValue(row, value) {
+        if (row === 0)
+            controller.layout = value
+        else if (row === 1)
+            controller.localeName = value
+        else
+            controller.timezone = value
     }
 
     function openDropdown(row) {
@@ -55,7 +67,7 @@ Item {
         if (choices(row).length === 0)
             return
         dropdown.query = ""
-        highlightedChoice = row === 2 ? 0 : Math.max(0, controller.setupChoiceIndex(row))
+        highlightedChoice = row === 2 ? 0 : currentIndex(row)
         typeAhead = ""
         dropdownOpen = true
         Qt.callLater(function() {
@@ -86,8 +98,7 @@ Item {
     function selectChoice(index) {
         if (index < 0 || index >= dropdownChoices.length)
             return
-        const sourceIndex = activeRow === 2 ? dropdownChoices[index].choiceIndex : index
-        controller.selectSetupChoice(activeRow, sourceIndex)
+        setValue(activeRow, dropdownChoices[index].value)
         closeDropdown()
         activeRow = activeRow + 1
     }
@@ -149,8 +160,8 @@ Item {
         const values = choices(activeRow)
         if (activeRow >= continueRow || values.length === 0)
             return
-        const index = (Math.max(0, controller.setupChoiceIndex(activeRow)) + delta + values.length) % values.length
-        controller.selectSetupChoice(activeRow, index)
+        const index = (currentIndex(activeRow) + delta + values.length) % values.length
+        setValue(activeRow, values[index].value)
     }
 
     function handleTextInput(text) {

@@ -1,7 +1,6 @@
 """Rootfs acquisition, filesystem creation, and installed-system configuration."""
 
 import hashlib
-import json
 from pathlib import Path
 import re
 import shutil
@@ -53,6 +52,31 @@ def mount_root(root, target):
     (target / ".snapshots").chmod(0o750)
 
 
+def configure_locale(target, locale):
+    supported = {line.split()[0] for line in (target / "usr/share/i18n/SUPPORTED").read_text().splitlines()
+                 if line.endswith(" UTF-8")}
+    if locale not in supported:
+        raise InstallError("Unsupported locale")
+    (target / "etc/locale.gen").write_text(f"{locale} UTF-8\n")
+    run(["arch-chroot", str(target), "locale-gen"])
+    (target / "etc/locale.conf").write_text(f"LANG={locale}\nLC_MESSAGES={locale}\n")
+
+
+def configure_keyboard(target, layout):
+    directory = target / "etc/X11/xorg.conf.d"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "00-keyboard.conf").write_text(
+        'Section "InputClass"\n    Identifier "system-keyboard"\n    MatchIsKeyboard "on"\n'
+        f'    Option "XkbLayout" "{layout}"\n    Option "XkbVariant" ""\nEndSection\n'
+    )
+    # systemd-localed reads 00-keyboard.conf; niri and the login screen use it.
+    for line in (target / "usr/share/systemd/kbd-model-map").read_text().splitlines():
+        fields = line.split()
+        if len(fields) >= 4 and fields[1] == layout and fields[3] == "-":
+            (target / "etc/vconsole.conf").write_text(f"KEYMAP={fields[0]}\n")
+            break
+
+
 def configure_hardware(target, progress=lambda value: None):
     prefix = ["arch-chroot", str(target)]
     # Refresh and upgrade the rootfs before installing hardware packages.
@@ -79,7 +103,8 @@ def provision(target, root, esp, archive, profile, progress=lambda value: None):
     read_profile = "set -euo pipefail\n" + "\n".join(
         f"IFS= read -r POND_{name}" for name in ("USERNAME", "PASSWORD", "TIMEZONE", "HOSTNAME")) + "\n"
     run(prefix + ["bash", "-c", read_profile + (ASSETS / "configure.sh").read_text()], input=profile.credentials())
-    run(prefix + ["python", "-c", (ASSETS / "apply-settings.py").read_text()], input=json.dumps(profile.settings()))
+    configure_locale(target, profile.locale)
+    configure_keyboard(target, profile.keyboard_layout)
     network = target / "etc/NetworkManager/system-connections"
     network.mkdir(parents=True, exist_ok=True, mode=0o700)
     for connection in Path("/etc/NetworkManager/system-connections").glob("*.nmconnection"):

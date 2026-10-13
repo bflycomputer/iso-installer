@@ -23,7 +23,10 @@ Rectangle {
 
     // ---- Decision-tree state, derived from the route history and the
     // controller's choices so a changed earlier answer drops its old branch.
-    readonly property string decisionStage: stageForRoute(routeName)
+    readonly property int activeDecision: ["DriveSelect", "DiskUse", "DestructiveConfirm"].indexOf(routeName)
+    readonly property string decisionStage: activeDecision >= 0 ? "decision"
+        : routeName === "WifiList" || routeName === "WifiPassword" ? "wifi"
+        : routeName === "Profile" ? "profile" : "language"
     readonly property string localeCode: {
         const name = controller.localeName
         const language = name.split(/[_.-]/)[0]
@@ -166,18 +169,6 @@ Rectangle {
     // ---- Decision tree derivation.
     function visited(route) { return controller.routeTrail.indexOf(route) >= 0 }
 
-    function stageForRoute(route) {
-        switch (route) {
-        case "WifiList":
-        case "WifiPassword": return "wifi"
-        case "DriveSelect": return "decision1"
-        case "DiskUse": return "decision2"
-        case "DestructiveConfirm": return "decision3"
-        case "Profile": return "profile"
-        default: return "language"
-        }
-    }
-
     function chosen(propertyName) {
         return Math.max(1, Number(controller[propertyName]) + 1)
     }
@@ -188,12 +179,7 @@ Rectangle {
     }
 
     function completedChoices() {
-        const stage = decisionStage
-        let completed = branchDepth
-        if (stage.startsWith("decision"))
-            completed = Number(stage.slice(8)) - 1
-        else if (stage === "language" || stage === "wifi")
-            completed = 0
+        const completed = activeDecision >= 0 ? activeDecision : decisionStage === "profile" ? branchDepth : 0
         const values = []
         if (completed >= 1)
             values.push(chosen("selectedDrive"))
@@ -241,6 +227,7 @@ Rectangle {
 
         ProgressTree {
             stage: shell.decisionStage
+            activeDecision: shell.activeDecision
             localeCode: shell.localeCode
             decisionChoices: shell.decisionChoices
             branchDepth: shell.branchDepth

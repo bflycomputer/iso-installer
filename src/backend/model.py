@@ -73,9 +73,6 @@ class Profile:
             zone = "UTC"
         return "\n".join((self.username, self.password, zone, self.hostname)) + "\n"
 
-    def settings(self):
-        return {"locale": self.locale, "layout": self.keyboard_layout}
-
 
 @dataclass(frozen=True)
 class Partition:
