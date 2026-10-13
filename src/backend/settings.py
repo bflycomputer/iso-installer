@@ -43,7 +43,7 @@ def hostname_error(value):
     if not value:
         return "Enter a computer name."
     if not HOSTNAME.fullmatch(value):
-        return "Use up to 63 letters, numbers, underscores, or dashes; do not start or end with a dash."
+        return "Use up to 63 letters, numbers, or dashes; do not start or end with a dash."
     return ""
 
 

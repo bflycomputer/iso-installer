@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 USERNAME = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
-HOSTNAME = re.compile(r"[A-Za-z0-9_](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9_])?")
+HOSTNAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
 MAX_PASSWORD_LENGTH = 128
 MIN_ALLOCATION_GIB = 20
 
