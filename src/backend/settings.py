@@ -78,11 +78,14 @@ def timezones(current, path="/usr/share/zoneinfo/zone.tab"):
     for identifier in [current, "UTC", *identifiers]:
         zone = QTimeZone(identifier.encode())
         offset = zone.offsetFromUtc(now)
-        label = zone.displayName(now, QTimeZone.NameType.LongName, english)
+        label = zone.displayName(QTimeZone.TimeType.StandardTime, QTimeZone.NameType.LongName, english)
         changes = zone.transitions(now, now.addYears(1))
+        names = {label, zone.displayName(now, QTimeZone.NameType.LongName, english)}
+        names.update(zone.displayName(change.atUtc, QTimeZone.NameType.LongName, english) for change in changes)
         transitions = tuple((change.atUtc.toSecsSinceEpoch(), change.offsetFromUtc) for change in changes)
         groups.setdefault((label, offset, transitions), {
             "value": identifier, "label": label,
+            "names": " ".join(sorted(names)),
             "detail": f'GMT{"-" if offset < 0 else "+"}{abs(offset) // 3600:02}:{abs(offset) // 60 % 60:02}',
             "search": " ".join(sorted({zone.abbreviation(now), *(change.abbreviation for change in changes)})),
         })

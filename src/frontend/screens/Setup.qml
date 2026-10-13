@@ -32,7 +32,7 @@ Item {
             .concat(indexed.filter(item => item.value !== current))
         const query = dropdown.query.trim().toLocaleLowerCase()
         const abbreviations = ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query))
-        return abbreviations.length ? abbreviations : ordered.filter(item => [item.label, item.detail, item.search].join(" ")
+        return abbreviations.length ? abbreviations : ordered.filter(item => [item.label, item.names, item.detail, item.search].join(" ")
             .toLocaleLowerCase().includes(query))
     }
 
