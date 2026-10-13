@@ -9,27 +9,51 @@ Item {
     readonly property int rowCount: networks.count
     readonly property int activeRow: controller.selectedNetwork >= 0 && controller.selectedNetwork < rowCount
         ? controller.selectedNetwork : 0
+    readonly property bool connecting: controller.wifi.connecting
+    property bool joinFailed: false
+    readonly property bool scanFailed: !joinFailed && controller.wifi.errorMessage !== ""
+        && !controller.wifi.scanning && !controller.wifi.networkConnected
+    readonly property bool busy: connecting || (rowCount === 0 && controller.wifi.scanning)
+    readonly property bool showStatus: connecting || joinFailed || scanFailed || rowCount === 0
+
+    onConnectingChanged: if (connecting) joinFailed = false
+
+    Connections {
+        target: controller.wifi
+        function onConnectionFailed() { root.joinFailed = true }
+        function onNetworkConnectedChanged() {
+            if (controller.wifi.networkConnected)
+                root.joinFailed = false
+        }
+    }
 
     function moveSelection(delta) {
-        if (rowCount > 0)
+        if (rowCount > 0 && !showStatus)
             chooseIndex((activeRow + delta + rowCount) % rowCount)
     }
     function chooseIndex(index) {
-        if (index >= 0 && index < rowCount)
+        if (!showStatus && index >= 0 && index < rowCount)
             controller.selectedNetwork = index
     }
     function accept() {
+        if (!navigation.primaryEnabled)
+            return
+        if (scanFailed) {
+            controller.wifi.requestScan()
+            return
+        }
         controller.selectedNetwork = rowCount > 0 ? activeRow : -1
         controller.advance()
     }
 
     Title {
-        y: 310
+        y: root.showStatus ? 376 : 310
         anchors.horizontalCenter: parent.horizontalCenter
         text: "Connect to Wifi"
     }
 
     Rectangle {
+        visible: !root.showStatus
         width: 376
         height: Math.max(60, Math.min(280, networks.contentHeight + 16))
         anchors.horizontalCenter: parent.horizontalCenter
@@ -106,38 +130,33 @@ Item {
                     }
                 }
             }
-
-            Label {
-                visible: networks.count === 0
-                anchors.centerIn: parent
-                width: 340
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
-                text: controller.wifi.scanning ? "Looking for networks…"
-                      : controller.wifi.networkConnected ? "Connected with a cable"
-                      : controller.wifi.available ? "No Wi-Fi networks found"
-                                                       : "No Wi-Fi adapter found"
-                color: Theme.textWhite
-                opacity: 0.7
-                font: Theme.base
-                lh: Theme.lhBase
-            }
         }
     }
 
-    ErrorText {
-        visible: (controller.errorMessage !== ""
-                                     || controller.wifi.errorMessage !== "")
-        y: 690
-        text: controller.errorMessage !== "" ? controller.errorMessage : controller.wifi.errorMessage
+    WifiStatusCard {
+        objectName: "wifiListStatus"
+        x: 685
+        y: 454
+        visible: root.showStatus
+        busy: root.busy
+        failed: root.joinFailed || root.scanFailed
+        message: root.connecting ? "Joining"
+               : root.joinFailed ? "Failed to connect"
+               : root.busy ? "Scanning"
+               : root.scanFailed ? "Failed to scan"
+               : controller.wifi.networkConnected ? "Connected with a cable"
+               : controller.wifi.available ? "No Wi-Fi networks found" : "No Wi-Fi adapter found"
     }
 
     NavBar {
-        y: 716
+        id: navigation
+        objectName: "wifiListNavigation"
+        visible: !root.busy
+        y: root.showStatus ? 661 : 716
         anchors.horizontalCenter: parent.horizontalCenter
-        label: "Next"
+        label: root.joinFailed || root.scanFailed ? "Try again" : "Next"
         spacing: 12
-        primaryEnabled: !controller.wifi.connecting && (root.rowCount > 0 || controller.wifi.networkConnected)
+        primaryEnabled: !root.busy && (root.joinFailed
+            || (root.scanFailed ? controller.wifi.available : root.rowCount > 0 || controller.wifi.networkConnected))
     }
-
 }

@@ -4,6 +4,7 @@ Label Label.qml
 NavBar NavBar.qml
 ProgressTree ProgressTree.qml
 WifiSignal WifiSignal.qml
+WifiStatusCard WifiStatusCard.qml
 ChoiceDropdown ChoiceDropdown.qml
 MenuShadow MenuShadow.qml
 DriveIllustration DriveIllustration.qml
