@@ -8,8 +8,6 @@ Item {
 
     property Item shell: null
     readonly property bool childOwnsFocus: editing
-    property int activeRow: 0
-    readonly property int rowCount: 2
     property bool passwordVisible: false
 
     readonly property bool connecting: controller.wifi.connecting
@@ -25,21 +23,6 @@ Item {
         })
     }
 
-    function moveSelection(delta) {
-        if (!editing)
-            return
-        activeRow = (activeRow + delta + rowCount) % rowCount
-        password.forceActiveFocus()
-    }
-
-    function chooseIndex(index) {
-        if (!editing)
-            return
-        if (index >= 0 && index < rowCount)
-            activeRow = index
-        password.forceActiveFocus()
-    }
-
     function togglePasswordVisibility() {
         if (!editing)
             return
@@ -47,18 +30,12 @@ Item {
         password.forceActiveFocus()
     }
 
-    function accept() {
-        if (editing && activeRow === 1)
-            togglePasswordVisibility()
-        else
-            submit()
-    }
+    function accept() { submit() }
 
     function submit() {
         if (connecting)
             return
         if (joinFailed) {
-            activeRow = 0
             joinFailed = false
             return
         }
@@ -140,6 +117,7 @@ Item {
             }
 
             Item {
+                objectName: "wifiPasswordReveal"
                 x: 310
                 y: 68
                 width: 36
@@ -149,7 +127,7 @@ Item {
                     anchors.fill: parent
                     radius: 8
                     color: "transparent"
-                    border.width: root.activeRow === 1 || eyeArea.containsMouse ? 1 : 0
+                    border.width: eyeArea.containsMouse ? 1 : 0
                     border.color: Theme.green
                 }
                 Image {
@@ -165,10 +143,7 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        root.activeRow = 0
-                        root.togglePasswordVisibility()
-                    }
+                    onClicked: root.togglePasswordVisibility()
                 }
             }
 
@@ -189,26 +164,11 @@ Item {
                     masked: !root.passwordVisible
                     whiteMask: false
                     textColor: Theme.green
-                    readOnly: root.activeRow !== 0 || !root.editing
+                    readOnly: !root.editing
                     inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
                     Keys.forwardTo: root.shell ? [root.shell] : []
-                    Keys.onPressed: function(event) {
-                        if (event.key === Qt.Key_Tab) {
-                            root.moveSelection(event.modifiers & Qt.ShiftModifier ? -1 : 1)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Space && root.activeRow === 1) {
-                            if (!event.isAutoRepeat)
-                                root.togglePasswordVisibility()
-                            event.accepted = true
-                        }
-                    }
-                }
-
-                TapHandler {
-                    onTapped: {
-                        root.activeRow = 0
-                        password.forceActiveFocus()
-                    }
+                    Keys.onTabPressed: root.focusPassword()
+                    Keys.onBacktabPressed: root.focusPassword()
                 }
             }
         }
