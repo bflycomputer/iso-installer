@@ -1,4 +1,4 @@
-"""Setup flow and Qt bindings for the Pond installer."""
+"""Setup flow and Qt bindings"""
 import json
 import logging
 import os
@@ -40,7 +40,8 @@ class Controller(QObject):
         self._drives = DictModel(['name', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
         self._wifi = WifiModel(self)
         self._wifi.connectionSucceeded.connect(self._connected)
-        self._wifi.connectionFailed.connect(self._set_error)
+        self._wifi.connectionFailed.connect(self._connection_failed)
+        self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)
         self._probed.connect(self._set_disks)
         self.profileChanged.connect(lambda: self._set_error(''))
         self._probe_thread = threading.Thread(target=self._probe, daemon=True)
@@ -102,6 +103,14 @@ class Controller(QObject):
         if self._route in ('WifiList', 'WifiPassword'):
             self._go('DriveSelect')
 
+    def _ethernet_changed(self):
+        if self._wifi.ethernetConnected:
+            self._connected()
+
+    def _connection_failed(self, message):
+        if self._route in ('WifiList', 'WifiPassword'):
+            self._set_error(message)
+
     @Slot()
     def advance(self):
         self._set_error('')
@@ -109,8 +118,11 @@ class Controller(QObject):
         if self._busy:
             return
         if route == 'Setup':
-            self._wifi.requestScan()
-            self._go('WifiList')
+            if self._wifi.ethernetConnected:
+                self._go('DriveSelect')
+            else:
+                self._wifi.requestScan()
+                self._go('WifiList')
         elif route == 'WifiList':
             rows = self._wifi.rows()
             if not 0 <= self._network < len(rows):
@@ -143,6 +155,8 @@ class Controller(QObject):
 
     @Slot()
     def back(self):
+        while self._history and self._wifi.ethernetConnected and self._history[-1] in ('WifiList', 'WifiPassword'):
+            self._history.pop()
         if self._history:
             self._route = self._history.pop()
             self._set_error('')
@@ -193,7 +207,7 @@ class Controller(QObject):
         if self._busy:
             return
         if not self.powerAvailable:
-            self._set_error('Power controls are available only in the Pond live environment.')
+            self._set_error('Power controls are available only in the installer live environment.')
             return
         try:
             subprocess.Popen(['systemctl', action])

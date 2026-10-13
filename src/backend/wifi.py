@@ -60,10 +60,10 @@ def parse_scan(text):
 
 def parse_devices(text):
     devices = [line.split(':') for line in text.splitlines()]
-    network_connected = any(len(row) >= 2 and row[0] in ('wifi', 'ethernet') and row[1] == 'connected' for row in devices)
+    ethernet = any(len(row) >= 2 and row[0] == 'ethernet' and row[1] == 'connected' for row in devices)
     wifi = any(len(row) >= 2 and row[0] == 'wifi' and row[1] == 'connected' for row in devices)
     available = any(row[0] == 'wifi' for row in devices)
-    return network_connected, wifi, available
+    return ethernet, wifi, available
 
 
 class WifiModel(DictModel):
@@ -72,6 +72,7 @@ class WifiModel(DictModel):
     connectingChanged = Signal()
     connectedChanged = Signal()
     networkConnectedChanged = Signal()
+    ethernetConnectedChanged = Signal()
     errorMessageChanged = Signal()
     connectionSucceeded = Signal()
     connectionFailed = Signal(str)
@@ -82,6 +83,7 @@ class WifiModel(DictModel):
         self._scanning = False
         self._connecting = False
         self._network_connected = False
+        self._ethernet_connected = False
         self._active_ssid = ""
         self._error = ""
         self._job = QProcess(self)
@@ -102,6 +104,7 @@ class WifiModel(DictModel):
     scanning = Property(bool, lambda self: self._scanning, notify=scanningChanged)
     connecting = Property(bool, lambda self: self._connecting, notify=connectingChanged)
     networkConnected = Property(bool, lambda self: self._network_connected, notify=networkConnectedChanged)
+    ethernetConnected = Property(bool, lambda self: self._ethernet_connected, notify=ethernetConnectedChanged)
     activeSsid = Property(str, lambda self: self._active_ssid, notify=connectedChanged)
     errorMessage = Property(str, lambda self: self._error, notify=errorMessageChanged)
 
@@ -116,12 +119,13 @@ class WifiModel(DictModel):
 
     def _polled(self, code, _status):
         text = bytes(self._poller.readAllStandardOutput()).decode(errors='replace')
-        network_connected, wifi, available = parse_devices(text if code == 0 else '')
+        ethernet, wifi, available = parse_devices(text if code == 0 else '')
         self._set("_available", self.availableChanged, available)
-        self._set("_network_connected", self.networkConnectedChanged, network_connected)
+        self._set("_network_connected", self.networkConnectedChanged, ethernet or wifi)
+        self._set("_ethernet_connected", self.ethernetConnectedChanged, ethernet)
         if not wifi:
             self._set("_active_ssid", self.connectedChanged, '')
-        if self._available and self.count == 0 and not self._scanning:
+        if not ethernet and self._available and self.count == 0 and not self._scanning:
             self.requestScan()
 
     @Slot()

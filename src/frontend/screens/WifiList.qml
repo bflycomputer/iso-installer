@@ -144,7 +144,6 @@ Item {
                : root.joinFailed ? "Failed to connect"
                : root.busy ? "Scanning"
                : root.scanFailed ? "Failed to scan"
-               : controller.wifi.networkConnected ? "Connected with a cable"
                : controller.wifi.available ? "No Wi-Fi networks found" : "No Wi-Fi adapter found"
     }
 
