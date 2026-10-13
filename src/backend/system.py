@@ -48,15 +48,15 @@ def fstab(root_uuid, esp_uuid=None):
 def mount_root(root, target):
     run(["wipefs", "--all", root.path])
     run(["mkfs.btrfs", "-f", "-L", "POND_ROOT", "-O", "^block-group-tree", root.path])
-    run(["mount", "-o", "compress=zstd:1", root.path, str(target)])
+    run(["mount", "-t", "btrfs", "-o", "compress=zstd:1", root.path, str(target)])
     for sub, _ in SUBVOLUMES:
         run(["btrfs", "subvolume", "create", str(target / sub)])
     run(["umount", str(target)])
-    run(["mount", "-o", "compress=zstd:1,subvol=@", root.path, str(target)])
+    run(["mount", "-t", "btrfs", "-o", "compress=zstd:1,subvol=@", root.path, str(target)])
     for sub, mount in SUBVOLUMES[1:]:
         path = target / mount.lstrip("/")
         path.mkdir(parents=True, exist_ok=True)
-        run(["mount", "-o", f"compress=zstd:1,subvol={sub}", root.path, str(path)])
+        run(["mount", "-t", "btrfs", "-o", f"compress=zstd:1,subvol={sub}", root.path, str(path)])
     (target / ".snapshots").chmod(0o750)
 
 

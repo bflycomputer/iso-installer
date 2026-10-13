@@ -61,7 +61,7 @@ def _validate_esp(plan, mount):
         sector = source.read(512)
     if sector[82:90] != b"FAT32   ":
         raise InstallError("The EFI partition must use FAT32")
-    run(["mount", "-o", "ro,nosuid,nodev,noexec,umask=0077", plan.esp.path, str(mount)])
+    run(["mount", "-t", "vfat", "-o", "ro,nosuid,nodev,noexec,umask=0077", plan.esp.path, str(mount)])
     try:
         space = os.statvfs(mount)
         if space.f_bavail * space.f_frsize < 16 * 1024**2:
