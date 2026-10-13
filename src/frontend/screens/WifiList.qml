@@ -7,8 +7,8 @@ Item {
     anchors.fill: parent
 
     readonly property int rowCount: networks.count
-    readonly property int activeRow: controller.selectedNetwork >= 0 && controller.selectedNetwork < rowCount
-        ? controller.selectedNetwork : 0
+    readonly property int activeRow: controller.selectedNetwork >= 0
+        ? controller.selectedNetwork : controller.selectedSsid === "" && rowCount > 0 ? 0 : -1
     readonly property bool connecting: controller.wifi.connecting
     property bool joinFailed: false
     readonly property bool scanFailed: !joinFailed && controller.wifi.errorMessage !== ""
@@ -29,7 +29,8 @@ Item {
 
     function moveSelection(delta) {
         if (rowCount > 0 && !showStatus)
-            chooseIndex((activeRow + delta + rowCount) % rowCount)
+            chooseIndex(activeRow < 0 ? (delta > 0 ? 0 : rowCount - 1)
+                                     : (activeRow + delta + rowCount) % rowCount)
     }
     function chooseIndex(index) {
         if (!showStatus && index >= 0 && index < rowCount)
@@ -42,7 +43,8 @@ Item {
             controller.wifi.requestScan()
             return
         }
-        controller.selectedNetwork = rowCount > 0 ? activeRow : -1
+        if (activeRow >= 0)
+            controller.selectedNetwork = activeRow
         controller.advance()
     }
 
@@ -155,6 +157,6 @@ Item {
         label: root.joinFailed || root.scanFailed ? "Try again" : "Next"
         spacing: 12
         primaryEnabled: !root.busy && (root.joinFailed
-            || (root.scanFailed ? controller.wifi.available : root.rowCount > 0 || controller.wifi.networkConnected))
+            || (root.scanFailed ? controller.wifi.available : root.activeRow >= 0 || controller.wifi.networkConnected))
     }
 }

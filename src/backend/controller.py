@@ -34,7 +34,7 @@ class Controller(QObject):
         self._timezone = bytes(QTimeZone.systemTimeZoneId()).decode()
         self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone)
         self._locale, self._layout = 'en_US.UTF-8', os.environ.get('XKB_DEFAULT_LAYOUT', 'us')
-        self._network, self._drive, self._option = -1, 0, 0
+        self._selected_ssid, self._drive, self._option = '', 0, 0
         self._username = self._password = self._confirmation = self._hostname = ''
         self._progress, self._failed, self._failure, self._warnings = 0.0, False, '', []
         self._disks, self._storage_ready, self._installer, self._busy = [], False, None, False
@@ -43,6 +43,8 @@ class Controller(QObject):
         self._wifi.connectionSucceeded.connect(self._connected)
         self._wifi.connectionFailed.connect(self._connection_failed)
         self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)
+        self._wifi.countChanged.connect(self.selectedNetworkChanged.emit)
+        self.routeChanged.connect(lambda: self._wifi.setScanEnabled(self._route == 'WifiList'))
         self._probed.connect(self._set_disks)
         self.profileChanged.connect(lambda: self._set_error(''))
         self._probe_thread = threading.Thread(target=self._probe, daemon=True)
@@ -79,6 +81,14 @@ class Controller(QObject):
 
     def _options(self):
         return disks.options(self._disk())
+
+    def _network_index(self):
+        return next((i for i, row in enumerate(self._wifi.rows()) if row['ssid'] == self._selected_ssid), -1)
+
+    def _select_network(self, index):
+        if not self._busy:
+            self._selected_ssid = self._wifi.get(index).get('ssid', '')
+            self.selectedNetworkChanged.emit()
 
     def _option_data(self):
         options = self._options()
@@ -122,18 +132,17 @@ class Controller(QObject):
             if self._wifi.ethernetConnected:
                 self._go('DriveSelect')
             else:
-                self._wifi.requestScan()
                 self._go('WifiList')
         elif route == 'WifiList':
-            rows = self._wifi.rows()
-            if not 0 <= self._network < len(rows):
+            network = self._wifi.get(self.selectedNetwork)
+            if not network:
                 if self._wifi.networkConnected:
                     self._go('DriveSelect')
                 else:
                     self._set_error('Select a Wi-Fi network or connect a network cable.')
-            elif rows[self._network]['active']:
+            elif network['active']:
                 self._go('DriveSelect')
-            elif rows[self._network]['secured']:
+            elif network['secured']:
                 self._go('WifiPassword')
             else:
                 self.connectSelectedNetwork('')
@@ -167,7 +176,7 @@ class Controller(QObject):
     def connectSelectedNetwork(self, password):
         if self._route not in ('WifiList', 'WifiPassword'):
             return
-        self._wifi.connectToNetwork(self._network, password)
+        self._wifi.connectToNetwork(self._selected_ssid, password)
 
     @Slot()
     def beginInstallation(self):
@@ -258,9 +267,9 @@ class Controller(QObject):
     localeName = Property(str, lambda self: self._locale, _setter('_locale', 'setupChanged'), notify=setupChanged)
     layout = Property(str, lambda self: self._layout, _set_layout, notify=setupChanged)
     timezone = Property(str, lambda self: self._timezone, _setter('_timezone', 'setupChanged'), notify=setupChanged)
-    selectedNetwork = Property(int, lambda self: self._network, _setter('_network', 'selectedNetworkChanged'), notify=selectedNetworkChanged)
-    selectedSsid = Property(str, lambda self: self._wifi.get(self._network).get('ssid', ''), notify=selectedNetworkChanged)
-    selectedNetworkStrength = Property(int, lambda self: int(self._wifi.get(self._network).get('strength', 0)), notify=selectedNetworkChanged)
+    selectedNetwork = Property(int, _network_index, _select_network, notify=selectedNetworkChanged)
+    selectedSsid = Property(str, lambda self: self._selected_ssid, notify=selectedNetworkChanged)
+    selectedNetworkStrength = Property(int, lambda self: int(self._wifi.get(self.selectedNetwork).get('strength', 0)), notify=selectedNetworkChanged)
     selectedDrive = Property(int, lambda self: self._drive, _select_drive, notify=selectedDriveChanged)
     selectedDriveData = Property('QVariantMap', lambda self: self._drives.get(self._drive), notify=selectedDriveChanged)
     installOptions = Property('QVariantList', lambda self: [{k: v for k, v in row.items() if k != 'plan'} for row in self._options()], notify=selectedDriveChanged)

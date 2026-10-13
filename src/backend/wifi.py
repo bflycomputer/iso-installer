@@ -84,15 +84,26 @@ class WifiModel(DictModel):
         self._network_connected = False
         self._ethernet_connected = False
         self._error = ""
+        self._scan_enabled = False
+        self._scan_timer = QTimer(self)
+        self._scan_timer.setInterval(5000)
+        self._scan_timer.setSingleShot(True)
+        self._scan_timer.timeout.connect(self.requestScan)
+        self.scanningChanged.connect(self._schedule_scan)
+        self.connectingChanged.connect(self._schedule_scan)
+        self._scanner = QProcess(self)
+        self._scanner.finished.connect(self._scanned)
+        self._scanner.errorOccurred.connect(lambda error: self._start_failed(error, self._scanned))
         self._job = QProcess(self)
-        self._job.errorOccurred.connect(self._job_error)
+        self._job.finished.connect(self._joined)
+        self._job.errorOccurred.connect(lambda error: self._start_failed(error, self._joined))
         self._poller = QProcess(self)
         self._poller.finished.connect(self._polled)
         self._poller.errorOccurred.connect(lambda _: self._set("_error", self.errorMessageChanged, "NetworkManager is unavailable."))
         environment = QProcessEnvironment.systemEnvironment()
         environment.insert('LC_ALL', 'C.UTF-8')
-        self._job.setProcessEnvironment(environment)
-        self._poller.setProcessEnvironment(environment)
+        for process in (self._scanner, self._job, self._poller):
+            process.setProcessEnvironment(environment)
         timer = QTimer(self)
         timer.timeout.connect(self.poll)
         timer.start(3000)
@@ -120,44 +131,55 @@ class WifiModel(DictModel):
         self._set("_available", self.availableChanged, available)
         self._set("_network_connected", self.networkConnectedChanged, ethernet or wifi)
         self._set("_ethernet_connected", self.ethernetConnectedChanged, ethernet)
-        if not ethernet and self._available and self.count == 0 and not self._scanning:
+        if not self._available:
+            self._scan_timer.stop()
+        elif self._scan_enabled and not self._scanning and not self._scan_timer.isActive():
             self.requestScan()
+
+    def setScanEnabled(self, enabled):
+        self._scan_enabled = enabled
+        self._scan_timer.stop()
+        if enabled:
+            self.requestScan()
+
+    def _schedule_scan(self):
+        self._scan_timer.stop()
+        if self._scan_enabled and self._available and not self._scanning and not self._connecting:
+            self._scan_timer.start()
 
     @Slot()
     def requestScan(self):
-        if not self._available or self._job.state() != QProcess.NotRunning:
+        if not self._scan_enabled or not self._available or self._connecting or self._scanner.state() != QProcess.NotRunning:
             return
         self._set("_scanning", self.scanningChanged, True)
         self._set("_error", self.errorMessageChanged, "")
-        self._job.finished.connect(self._scanned)
-        self._job.start("nmcli", ["--wait", "15", "-t", "--escape", "no", "-f", "SIGNAL,SECURITY,IN-USE,SSID", "device", "wifi", "list", "--rescan", "yes"])
+        self._scanner.start("nmcli", ["--wait", "15", "-t", "--escape", "no", "-f", "SIGNAL,SECURITY,IN-USE,SSID", "device", "wifi", "list", "--rescan", "yes"])
 
     def _scanned(self, code, _status):
-        self._job.finished.disconnect(self._scanned)
-        text = bytes(self._job.readAllStandardOutput()).decode(errors='replace')
+        text = bytes(self._scanner.readAllStandardOutput()).decode(errors='replace')
+        # An older scan must not replace the state of a new connection.
+        if self._scan_enabled and not self._connecting:
+            if code:
+                self._set("_error", self.errorMessageChanged, 'Could not scan for Wi-Fi networks.')
+            else:
+                self.reset(parse_scan(text))
         self._set("_scanning", self.scanningChanged, False)
-        if code:
-            self._set("_error", self.errorMessageChanged, 'Could not scan for Wi-Fi networks.')
-            return
-        self.reset(parse_scan(text))
 
-    @Slot(int, str)
-    def connectToNetwork(self, row, password):
-        if not 0 <= row < len(self._rows) or self._job.state() != QProcess.NotRunning:
+    @Slot(str, str)
+    def connectToNetwork(self, ssid, password):
+        if not ssid or self._job.state() != QProcess.NotRunning:
             return
         if any(c in password for c in "\n\r\0"):
             self.connectionFailed.emit("The Wi-Fi password contains an unsupported character.")
             return
-        self._ssid = self._rows[row]["ssid"]
+        self._ssid = ssid
         self._set("_connecting", self.connectingChanged, True)
         self._set("_error", self.errorMessageChanged, "")
-        self._job.finished.connect(self._joined)
         self._job.start("nmcli", ["--wait", "45", "--ask", "device", "wifi", "connect", self._ssid])
         self._job.write((password + "\n").encode())
         self._job.closeWriteChannel()
 
     def _joined(self, code, _status):
-        self._job.finished.disconnect(self._joined)
         self._set("_connecting", self.connectingChanged, False)
         if code == 0:
             self.reset({**row, 'active': row['ssid'] == self._ssid} for row in self._rows)
@@ -167,18 +189,16 @@ class WifiModel(DictModel):
         self._set("_error", self.errorMessageChanged, "Could not join the network.")
         self.connectionFailed.emit(self._error)
 
-    def _job_error(self, error):
+    def _start_failed(self, error, finished):
         if error == QProcess.FailedToStart:
-            if self._scanning:
-                self._scanned(1, QProcess.CrashExit)
-            elif self._connecting:
-                self._joined(1, QProcess.CrashExit)
+            finished(1, QProcess.CrashExit)
             self._set("_error", self.errorMessageChanged, "NetworkManager could not be started.")
 
     def close(self):
+        self._scan_enabled = False
         for timer in self.findChildren(QTimer):
             timer.stop()
-        for process in (self._job, self._poller):
+        for process in (self._scanner, self._job, self._poller):
             if process.state() != QProcess.NotRunning:
                 process.kill()
                 process.waitForFinished(1000)
