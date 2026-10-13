@@ -101,7 +101,7 @@ def _execute(plan, profile, archive, progress):
             if plan.esp is None:
                 run(["wipefs", "--all", esp.path])
                 run(["mkfs.fat", "-F", "32", "-n", "Pond EFI", esp.path])
-            run(["mount", "-o", "umask=0077", esp.path, str(esp_mount)])
+            run(["mount", "-t", "vfat", "-o", "umask=0077", esp.path, str(esp_mount)])
             run(["mount", "--bind", str(esp_mount), str(target / "boot/efi")])
         run(["arch-chroot", str(target), "/usr/share/libalpm/scripts/pond-grub-update"])
         if not (target / "boot/grub/grub.cfg").stat().st_size:
