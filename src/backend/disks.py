@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import backend
-from backend.model import max_allocation_gib
 
 
 def size_label(value):
@@ -30,8 +29,7 @@ def options(disk):
         if mode is backend.Mode.FREE_SPACE and not disk.partitions:
             continue
         try:
-            plan = backend.plan_install(disk, mode, max_allocation_gib(disk) if mode is backend.Mode.FREE_SPACE else None,
-                                        boot_mode=backend.current_boot_mode())
+            plan = backend.plan_install(disk, mode, boot_mode=backend.current_boot_mode())
         except backend.InstallError:
             continue
         choices.append({'mode': mode.value, 'plan': plan, 'preservesEfi': plan.esp is not None})

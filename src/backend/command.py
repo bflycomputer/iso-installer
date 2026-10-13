@@ -1,4 +1,4 @@
-"""Run installer commands and validate device identifiers."""
+"""Run installer commands."""
 
 from contextlib import suppress
 import os
@@ -33,10 +33,3 @@ def run(argv, *, input=None, check=True, stderr=subprocess.PIPE):
             detail = f"{detail[:480]}\n... [stderr truncated] ...\n{detail[-480:]}"
         raise InstallError(f"{argv[0]} failed (exit {result.returncode}){detail}")
     return result
-
-
-def identifier(argv):
-    value = run(argv).stdout.strip()
-    if not value or "\ufffd" in value or "\n" in value:
-        raise InstallError("A device identifier is missing or invalid")
-    return value

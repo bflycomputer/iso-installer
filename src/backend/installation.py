@@ -1,7 +1,6 @@
 """Synchronous installation for the dedicated installation process."""
 
 from contextlib import suppress
-from dataclasses import dataclass
 import fcntl
 import os
 from pathlib import Path
@@ -11,14 +10,8 @@ import signal
 import tempfile
 
 from .command import run
-from .model import BootMode, InstallError, Plan, Profile, current_boot_mode, plan_install
+from .model import BootMode, InstallError, Plan, Profile
 from . import system, storage
-
-
-@dataclass(frozen=True)
-class Installed:
-    boot_entry: str | None
-    warnings: tuple[str, ...] = ()
 
 
 def _firmware():
@@ -35,10 +28,6 @@ def _preflight(plan):
                 "mount", "mountpoint", "umount", "bsdtar", "arch-chroot", "efibootmgr", "sync")
     if any(shutil.which(command) is None for command in required):
         raise InstallError("The live environment is missing an installation dependency")
-    if plan != plan_install(plan.disk, plan.mode, plan.allocation_gib, boot_mode=plan.boot_mode):
-        raise InstallError("The installation plan was modified")
-    if plan.boot_mode is not current_boot_mode():
-        raise InstallError("The firmware mode changed; prepare a new installation plan")
     if plan.boot_mode is BootMode.BIOS:
         return
     secure_boot = Path("/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c")
@@ -177,10 +166,10 @@ def _execute(plan, profile, archive, progress):
                 warnings.append(str(error))
         if not committed and warnings:
             raise InstallError("Installation failed and cleanup needs attention: " + "; ".join(warnings))
-    return Installed(entry, tuple(warnings))
+    return tuple(warnings)
 
 
-def install(plan: Plan, profile: Profile, archive: Path, progress=lambda value: None) -> Installed:
+def install(plan: Plan, profile: Profile, archive: Path, progress=lambda value: None) -> tuple[str, ...]:
     """Install in the dedicated child process, with a private mount namespace.
 
     The caller owns archive acquisition and must keep its contents unchanged

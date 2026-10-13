@@ -13,16 +13,14 @@ from backend.storage import revalidate
 
 
 def request(plan, profile):
-    data = asdict(profile)
-    data.pop('wifi')
     return {'disk': asdict(plan.disk), 'mode': plan.mode.value,
-            'allocation_gib': plan.allocation_gib, 'boot_mode': plan.boot_mode.value, 'profile': data}
+            'boot_mode': plan.boot_mode.value, 'profile': asdict(profile)}
 
 
 def decode(data):
     disk = dict(data['disk'])
     disk['partitions'] = tuple(Partition(**part) for part in disk['partitions'])
-    plan = backend.plan_install(backend.Disk(**disk), backend.Mode(data['mode']), data['allocation_gib'],
+    plan = backend.plan_install(backend.Disk(**disk), backend.Mode(data['mode']),
                                 boot_mode=backend.BootMode(data['boot_mode']))
     profile = backend.Profile(**data['profile'])
     return plan, profile
@@ -40,9 +38,9 @@ def execute(data, report):
     with tempfile.TemporaryDirectory(prefix='pond-download-', dir='/var/tmp') as directory:
         progress(0.04)
         archive = backend.fetch_rootfs(Path(directory))
-        result = backend.install(plan, profile, archive, progress)
+        warnings = backend.install(plan, profile, archive, progress)
     progress(1)
-    report({'type': 'done', 'warnings': list(result.warnings)})
+    report({'type': 'done', 'warnings': list(warnings)})
 
 
 def main():

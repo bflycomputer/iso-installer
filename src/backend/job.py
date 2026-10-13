@@ -27,8 +27,6 @@ class InstallJob(QObject):
         self._download = ''
 
     def start(self, plan, profile):
-        self._result = None
-        self._cancelled = False
         self.process.start(sys.executable, ['-m', 'backend.worker'])
         self.process.write(json.dumps(request(plan, profile)).encode())
         self.process.closeWriteChannel()

@@ -88,7 +88,7 @@ class Controller(QObject):
 
     def _profile(self):
         return backend.Profile(self._username.strip(), self._password, self._hostname.strip(),
-                               self._timezone, self._locale, self._locale, self._layout)
+                               self._timezone, self._locale, self._layout)
 
     def _go(self, route):
         self._history.append(self._route)
@@ -228,8 +228,7 @@ class Controller(QObject):
             self._installer.cancel()
             self._installer.wait()
         self._wifi.close()
-        if self._probe_thread:
-            self._probe_thread.join()
+        self._probe_thread.join()
 
     def _choices(self, row):
         return (self._keyboards, self._languages, self._timezones)[row]

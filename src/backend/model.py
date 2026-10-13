@@ -45,23 +45,13 @@ def current_boot_mode():
 
 
 @dataclass(frozen=True)
-class Wifi:
-    ssid: bytes
-    password: str = field(repr=False)
-    key_management: str = "wpa-psk"
-
-
-@dataclass(frozen=True)
 class Profile:
     username: str
     password: str = field(repr=False)
     hostname: str
     timezone: str = "UTC"
     locale: str = "en_US.UTF-8"
-    language: str = "en_US.UTF-8"
     keyboard_layout: str = "us"
-    keyboard_variant: str = ""
-    wifi: Wifi | None = field(default=None, repr=False)
 
     def validate(self):
         if not isinstance(self.username, str) or not USERNAME.fullmatch(self.username):
@@ -70,19 +60,12 @@ class Profile:
             raise InstallError("Invalid computer name")
         if not isinstance(self.password, str) or not 1 <= len(self.password) <= MAX_PASSWORD_LENGTH or any(c in self.password for c in "\n\r\0"):
             raise InstallError("Invalid password")
-        if not all(isinstance(v, str) for v in (self.timezone, self.locale, self.language,
-                                               self.keyboard_layout, self.keyboard_variant)):
+        if not all(isinstance(v, str) for v in (self.timezone, self.locale, self.keyboard_layout)):
             raise InstallError("Invalid regional settings")
-        for value in (self.locale, self.language):
-            if not re.fullmatch(r"[A-Za-z0-9_.@-]+", value):
-                raise InstallError("Invalid locale")
-        if not re.fullmatch(r"[a-z0-9_-]+", self.keyboard_layout) or not re.fullmatch(r"[a-z0-9_-]*", self.keyboard_variant):
+        if not re.fullmatch(r"[A-Za-z0-9_.@-]+", self.locale):
+            raise InstallError("Invalid locale")
+        if not re.fullmatch(r"[a-z0-9_-]+", self.keyboard_layout):
             raise InstallError("Invalid keyboard layout")
-        if self.wifi is not None:
-            if (not isinstance(self.wifi, Wifi) or not isinstance(self.wifi.ssid, bytes)
-                    or not 1 <= len(self.wifi.ssid) <= 32 or not isinstance(self.wifi.password, str)
-                    or self.wifi.key_management not in ("wpa-psk", "sae")):
-                raise InstallError("Invalid network settings")
 
     def credentials(self):
         zone = self.timezone
@@ -91,11 +74,7 @@ class Profile:
         return "\n".join((self.username, self.password, zone, self.hostname)) + "\n"
 
     def settings(self):
-        return {"locale": self.locale, "language": self.language,
-                "layout": self.keyboard_layout, "variant": self.keyboard_variant,
-                "wifi": None if self.wifi is None else {
-                    "ssid_hex": self.wifi.ssid.hex(), "psk": self.wifi.password,
-                    "key_management": self.wifi.key_management}}
+        return {"locale": self.locale, "layout": self.keyboard_layout}
 
 
 @dataclass(frozen=True)
@@ -126,7 +105,6 @@ class Disk:
 class Plan:
     disk: Disk
     mode: Mode
-    allocation_gib: int | None
     root_start: int
     root_size: int
     esp: Partition | None
@@ -148,16 +126,7 @@ def gaps(size, partitions):
     return result
 
 
-def max_allocation_gib(disk):
-    return max((size // GIB for _, size in gaps(disk.size, disk.partitions)), default=0)
-
-
-def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None,
-                 *, boot_mode: BootMode = BootMode.UEFI) -> Plan:
-    if not isinstance(mode, Mode):
-        raise InstallError("Unknown installation mode")
-    if not isinstance(boot_mode, BootMode):
-        raise InstallError("Unknown firmware mode")
+def plan_install(disk: Disk, mode: Mode, *, boot_mode: BootMode = BootMode.UEFI) -> Plan:
     if disk.busy or disk.read_only or not disk.identity:
         raise InstallError("The selected disk is unavailable or in use")
     if disk.size < 21 * GIB:
@@ -181,14 +150,12 @@ def plan_install(disk: Disk, mode: Mode, allocation_gib: int | None = None,
         bios = boots[0] if boots else None
     boot_bytes = (0 if bios else MIB) if boot_mode is BootMode.BIOS else (0 if esp else ESP_BYTES)
     if mode is Mode.FREE_SPACE:
-        if type(allocation_gib) is not int or not MIN_ALLOCATION_GIB <= allocation_gib <= available // GIB:
+        total = available // GIB * GIB
+        if total < MIN_ALLOCATION_GIB * GIB:
             raise InstallError(f"Allocation must fit the largest free region and be at least {MIN_ALLOCATION_GIB} GiB")
-        total = allocation_gib * GIB
     else:
-        if allocation_gib is not None:
-            raise InstallError("Replacement uses the available space; do not specify an allocation")
         total = available
         if total - boot_bytes < MIN_ALLOCATION_GIB * GIB:
             raise InstallError("Not enough space remains after preserving EFI partitions")
-    return Plan(disk, mode, allocation_gib, start + boot_bytes, total - boot_bytes,
+    return Plan(disk, mode, start + boot_bytes, total - boot_bytes,
                 esp, start if boot_bytes else None, boot_mode, bios)

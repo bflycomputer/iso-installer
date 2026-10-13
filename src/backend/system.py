@@ -6,9 +6,8 @@ from pathlib import Path
 import re
 import shutil
 import sys
-import tempfile
 
-from .command import identifier, run
+from .command import run
 from .model import InstallError, ROOTFS_SHA256, ROOTFS_URL, SUBVOLUMES
 
 ASSETS = Path(__file__).parent / "assets"
@@ -23,15 +22,9 @@ def verify_rootfs(archive):
 
 def fetch_rootfs(directory: Path) -> Path:
     """Download into caller-owned scratch space; installation verifies the checksum."""
-    directory = Path(directory)
-    with tempfile.NamedTemporaryFile(dir=directory, prefix="pond-rootfs-", suffix=".tar.zst", delete=False) as out:
-        path = Path(out.name)
-        try:
-            run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
-                 "--retry-all-errors", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
-        except BaseException:
-            path.unlink(missing_ok=True)
-            raise
+    path = Path(directory) / "pond-rootfs.tar.zst"
+    run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
+         "--retry-all-errors", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
     return path
 
 
@@ -80,7 +73,7 @@ def provision(target, root, esp, archive, profile, progress=lambda value: None):
     run(["bsdtar", "--numeric-owner", "--acls", "--xattrs", "-xpf", str(archive), "-C", str(target)])
     progress(0.78)
     (target / "boot/efi").mkdir(parents=True, exist_ok=True)
-    root_uuid = identifier(["blkid", "-s", "UUID", "-o", "value", root.path])
+    root_uuid = run(["blkid", "-s", "UUID", "-o", "value", root.path]).stdout.strip()
     (target / "etc/fstab").write_text(fstab(root_uuid, esp.uuid if esp else None))
     prefix = ["arch-chroot", str(target)]
     read_profile = "set -euo pipefail\n" + "\n".join(

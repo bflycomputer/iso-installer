@@ -70,7 +70,6 @@ class WifiModel(DictModel):
     availableChanged = Signal()
     scanningChanged = Signal()
     connectingChanged = Signal()
-    connectedChanged = Signal()
     networkConnectedChanged = Signal()
     ethernetConnectedChanged = Signal()
     errorMessageChanged = Signal()
@@ -84,7 +83,6 @@ class WifiModel(DictModel):
         self._connecting = False
         self._network_connected = False
         self._ethernet_connected = False
-        self._active_ssid = ""
         self._error = ""
         self._job = QProcess(self)
         self._job.errorOccurred.connect(self._job_error)
@@ -105,7 +103,6 @@ class WifiModel(DictModel):
     connecting = Property(bool, lambda self: self._connecting, notify=connectingChanged)
     networkConnected = Property(bool, lambda self: self._network_connected, notify=networkConnectedChanged)
     ethernetConnected = Property(bool, lambda self: self._ethernet_connected, notify=ethernetConnectedChanged)
-    activeSsid = Property(str, lambda self: self._active_ssid, notify=connectedChanged)
     errorMessage = Property(str, lambda self: self._error, notify=errorMessageChanged)
 
     def _set(self, name, signal, value):
@@ -123,8 +120,6 @@ class WifiModel(DictModel):
         self._set("_available", self.availableChanged, available)
         self._set("_network_connected", self.networkConnectedChanged, ethernet or wifi)
         self._set("_ethernet_connected", self.ethernetConnectedChanged, ethernet)
-        if not wifi:
-            self._set("_active_ssid", self.connectedChanged, '')
         if not ethernet and self._available and self.count == 0 and not self._scanning:
             self.requestScan()
 
@@ -144,9 +139,7 @@ class WifiModel(DictModel):
         if code:
             self._set("_error", self.errorMessageChanged, 'Could not scan for Wi-Fi networks.')
             return
-        rows = parse_scan(text)
-        self.reset(rows)
-        self._set("_active_ssid", self.connectedChanged, next((row['ssid'] for row in rows if row['active']), ''))
+        self.reset(parse_scan(text))
 
     @Slot(int, str)
     def connectToNetwork(self, row, password):
@@ -168,7 +161,6 @@ class WifiModel(DictModel):
         self._set("_connecting", self.connectingChanged, False)
         if code == 0:
             self.reset({**row, 'active': row['ssid'] == self._ssid} for row in self._rows)
-            self._set("_active_ssid", self.connectedChanged, self._ssid)
             self._set("_network_connected", self.networkConnectedChanged, True)
             self.connectionSucceeded.emit()
             return
