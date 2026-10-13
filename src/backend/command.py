@@ -28,8 +28,10 @@ def run(argv, *, input=None, check=True, stderr=subprocess.PIPE):
             raise
     result = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
     if check and result.returncode:
-        # Command arguments/input/output can carry account or network secrets.
-        raise InstallError(f"{argv[0]} failed (exit {result.returncode})")
+        detail = f": {result.stderr.strip()}" if result.stderr else ""
+        if len(detail) > 1000:
+            detail = f"{detail[:480]}\n... [stderr truncated] ...\n{detail[-480:]}"
+        raise InstallError(f"{argv[0]} failed (exit {result.returncode}){detail}")
     return result
 
 
