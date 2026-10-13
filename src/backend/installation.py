@@ -30,11 +30,6 @@ def _preflight(plan):
         raise InstallError("The live environment is missing an installation dependency")
     if plan.boot_mode is BootMode.BIOS:
         return
-    secure_boot = Path("/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c")
-    # Firmware without Secure Boot support does not expose this variable.
-    state = secure_boot.read_bytes() if secure_boot.exists() else b"\0" * 5
-    if len(state) != 5 or state[4] != 0:
-        raise InstallError("Secure Boot must be disabled")
     if any(label.casefold() == "pond" for label in _firmware()[0].values()):
         raise InstallError("A Pond firmware entry already exists")
 
