@@ -151,17 +151,12 @@ Item {
         return true
     }
 
-    // Left/right step the active field's value without opening it.
+    // Left/right open the active field and move its highlighted choice.
     function adjust(delta) {
-        if (dropdownOpen) {
+        if (!dropdownOpen && activeRow < continueRow)
+            openDropdown(activeRow)
+        if (dropdownOpen)
             moveSelection(delta)
-            return
-        }
-        const values = choices(activeRow)
-        if (activeRow >= continueRow || values.length === 0)
-            return
-        const index = (currentIndex(activeRow) + delta + values.length) % values.length
-        setValue(activeRow, values[index].value)
     }
 
     function handleTextInput(text) {
