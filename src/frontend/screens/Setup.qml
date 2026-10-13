@@ -31,9 +31,14 @@ Item {
         const ordered = indexed.filter(item => item.value === current)
             .concat(indexed.filter(item => item.value !== current))
         const query = dropdown.query.trim().toLocaleLowerCase()
-        const abbreviations = ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query))
-        return abbreviations.length ? abbreviations : ordered.filter(item => [item.label, item.names, item.detail, item.search].join(" ")
-            .toLocaleLowerCase().includes(query))
+        return ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query)
+            || (" " + [item.label, item.names, item.detail].join(" ")).toLocaleLowerCase().includes(" " + query))
+    }
+    onDropdownChoicesChanged: {
+        if (activeRow === 2) {
+            highlightedChoice = dropdownChoices.length > 0 ? 0 : -1
+            Qt.callLater(function() { dropdown.positionAt(root.highlightedChoice) })
+        }
     }
 
     function choices(row) {
@@ -260,12 +265,6 @@ Item {
         shell: root.shell
         choices: root.dropdownChoices
         highlightedIndex: root.highlightedChoice
-        onQueryChanged: {
-            if (root.activeRow === 2) {
-                root.highlightedChoice = root.dropdownChoices.length > 0 ? 0 : -1
-                Qt.callLater(function() { dropdown.positionAt(root.highlightedChoice) })
-            }
-        }
         onChosen: function(index) { root.selectChoice(index) }
         onTabbed: function(direction) {
             root.closeDropdown()

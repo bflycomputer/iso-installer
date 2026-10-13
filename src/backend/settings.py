@@ -74,22 +74,28 @@ def keyboards(path="/usr/share/X11/xkb/rules/evdev.xml"):
 def timezones(current, path="/usr/share/zoneinfo/zone.tab"):
     identifiers = sorted(line.split("\t")[2].strip() for line in Path(path).read_text().splitlines()
                          if line and not line.startswith("#"))
-    now, english, groups = QDateTime.currentDateTimeUtc(), QLocale("en_US"), {}
+    now, english, entries = QDateTime.currentDateTimeUtc(), QLocale("en_US"), {}
     for identifier in [current, "UTC", *identifiers]:
         zone = QTimeZone(identifier.encode())
-        offset = zone.offsetFromUtc(now)
-        label = zone.displayName(QTimeZone.TimeType.StandardTime, QTimeZone.NameType.LongName, english)
+        standard_name = zone.displayName(QTimeZone.TimeType.StandardTime, QTimeZone.NameType.LongName, english)
+        # Named IDs distinguish regions with different daylight-saving rules.
+        zone_id = QTimeZone.ianaIdToWindowsId(identifier.encode())
+        label = bytes(zone_id).decode() or standard_name
+        default = bytes(QTimeZone.windowsIdToDefaultIanaId(zone_id)).decode() or identifier
+        value = identifier if identifier == current else default
+        offset = QTimeZone(value.encode()).offsetFromUtc(now)
         changes = zone.transitions(now, now.addYears(1))
-        names = {label, zone.displayName(now, QTimeZone.NameType.LongName, english)}
+        names = {standard_name, zone.displayName(now, QTimeZone.NameType.LongName, english)}
         names.update(zone.displayName(change.atUtc, QTimeZone.NameType.LongName, english) for change in changes)
-        transitions = tuple((change.atUtc.toSecsSinceEpoch(), change.offsetFromUtc) for change in changes)
-        groups.setdefault((label, offset, transitions), {
-            "value": identifier, "label": label,
-            "names": " ".join(sorted(names)),
+        entry = entries.setdefault(label, {
+            "value": value, "label": label, "offset": offset,
+            "names": set(), "search": set(),
             "detail": f'GMT{"-" if offset < 0 else "+"}{abs(offset) // 3600:02}:{abs(offset) // 60 % 60:02}',
-            "search": " ".join(sorted({zone.abbreviation(now), *(change.abbreviation for change in changes)})),
         })
-    return [item for key, item in sorted(groups.items(), key=lambda entry: (entry[0][1], entry[1]["label"]))]
+        entry["names"].update(names)
+        entry["search"].update({zone.abbreviation(now), *(change.abbreviation for change in changes)})
+    return [{**item, "names": " ".join(sorted(item["names"])), "search": " ".join(sorted(item["search"]))}
+            for item in sorted(entries.values(), key=lambda item: (item["offset"], item["label"]))]
 
 
 def device_name():
