@@ -30,7 +30,7 @@ def decode(data):
 
 def execute(data, report):
     if os.geteuid() != 0 or not Path('/etc/pond-installer-live').is_file():
-        raise backend.InstallError('Installation requires the Pond live environment as root')
+        raise backend.InstallError('Installation requires the installer live environment as root')
     plan, profile = decode(data)
     # Reject an outdated confirmation before downloading the payload.
     revalidate(plan.disk)

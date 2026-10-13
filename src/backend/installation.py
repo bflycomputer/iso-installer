@@ -30,7 +30,7 @@ def _firmware():
 
 def _preflight(plan):
     if os.geteuid() != 0 or not Path("/etc/pond-installer-live").is_file():
-        raise InstallError("Installation requires the Pond live environment as root")
+        raise InstallError("Installation requires the installer live environment as root")
     required = ("lsblk", "udevadm", "wipefs", "mkfs.btrfs", "mkfs.fat", "btrfs", "blkid",
                 "mount", "mountpoint", "umount", "bsdtar", "arch-chroot", "efibootmgr", "sync")
     if any(shutil.which(command) is None for command in required):
