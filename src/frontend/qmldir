@@ -1,17 +1,1 @@
 singleton Theme Theme.qml
-Shell Shell.qml
-Label Label.qml
-NavBar NavBar.qml
-ProgressTree ProgressTree.qml
-WifiSignal WifiSignal.qml
-WifiStatusCard WifiStatusCard.qml
-ChoiceDropdown ChoiceDropdown.qml
-MenuShadow MenuShadow.qml
-DriveIllustration DriveIllustration.qml
-ChoiceBadge ChoiceBadge.qml
-PasswordInput PasswordInput.qml
-InstallOptionCard InstallOptionCard.qml
-EscapeHint EscapeHint.qml
-Field Field.qml
-Title Title.qml
-ErrorText ErrorText.qml

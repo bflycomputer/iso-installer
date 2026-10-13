@@ -6,14 +6,10 @@ Rectangle {
 
     property alias screen: sceneLoader.source
 
-    signal back
-
     readonly property string routeName: controller.route
 
     // Chrome flags a screen may override. Written out per flag: QML only
     // tracks a binding dependency on a named property access.
-    readonly property bool showProgressTree:
-        !sceneLoader.item || sceneLoader.item.showProgressTree === undefined || sceneLoader.item.showProgressTree
     readonly property int rowCount:
         sceneLoader.item && sceneLoader.item.rowCount !== undefined ? sceneLoader.item.rowCount : 0
     // A text field owns typing: digit shortcuts, left/right and space go to it.
@@ -96,42 +92,23 @@ Rectangle {
 
     function navigateBack() {
         if (!sceneLoader.item || sceneLoader.item.dismiss === undefined || !sceneLoader.item.dismiss())
-            shell.back()
+            controller.back()
     }
 
-    function requestPowerOff() {
-        controller.powerOffComputer()
-    }
-
-    function move(delta) {
+    function dispatch(name, argument) {
         const item = sceneLoader.item
-        if (!item)
-            return
-        if (item.moveSelection !== undefined)
-            item.moveSelection(delta)
-    }
-
-    function choose(index) {
-        const item = sceneLoader.item
-        if (!item)
-            return
-        if (item.chooseIndex !== undefined)
-            item.chooseIndex(index)
-    }
-
-    function activate() {
-        if (sceneLoader.item && sceneLoader.item.accept !== undefined)
-            sceneLoader.item.accept()
+        if (item && item[name] !== undefined)
+            item[name](argument)
     }
 
     function handleKeyPress(event) {
         const item = sceneLoader.item
         switch (event.key) {
         case Qt.Key_Down:
-            move(1)
+            dispatch("moveSelection", 1)
             break
         case Qt.Key_Up:
-            move(-1)
+            dispatch("moveSelection", -1)
             break
         case Qt.Key_Return:
         case Qt.Key_Enter:
@@ -139,7 +116,7 @@ Rectangle {
                 break
             acceptKey = event.key
 
-            activate()
+            dispatch("accept")
             break
         case Qt.Key_Escape:
             if (event.isAutoRepeat)
@@ -153,7 +130,7 @@ Rectangle {
             if (childOwnsFocus || !item)
                 return
             if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && rowCount > event.key - Qt.Key_1)
-                choose(event.key - Qt.Key_1)
+                dispatch("chooseIndex", event.key - Qt.Key_1)
             else if ((event.key === Qt.Key_Left || event.key === Qt.Key_Right) && item.adjust !== undefined)
                 item.adjust(event.key === Qt.Key_Left ? -1 : 1)
             else if (event.key === Qt.Key_Space && item.toggleDropdown !== undefined)
@@ -273,9 +250,7 @@ Rectangle {
             profileActive: shell.profileActive
             escapePressed: shell.escapeHeld || escapeFlash.running
             onEscapeClicked: shell.navigateBack()
-            visible: shell.showProgressTree
 
-            transformOrigin: Item.TopRight
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.top: parent.top
@@ -287,7 +262,6 @@ Rectangle {
             color: Theme.chromeMuted
             font: Theme.xl
             lh: Theme.lhXl
-            transformOrigin: Item.BottomLeft
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.bottom: parent.bottom
@@ -301,7 +275,6 @@ Rectangle {
             border.width: 1
             border.color: Theme.chromeMuted
             radius: 4
-            transformOrigin: Item.BottomLeft
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.bottom: parent.bottom
@@ -323,7 +296,6 @@ Rectangle {
             lh: Theme.lhXs
             wrapMode: Text.WordWrap
             width: 142
-            transformOrigin: Item.BottomRight
             anchors.right: parent.right
             anchors.rightMargin: 94
             anchors.bottom: parent.bottom
@@ -333,7 +305,6 @@ Rectangle {
         Item {
             width: 80
             height: 80
-            transformOrigin: Item.BottomRight
             anchors.right: parent.right
             anchors.bottom: parent.bottom
 
@@ -356,7 +327,7 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: shell.requestPowerOff()
+                onClicked: controller.powerOffComputer()
             }
         }
     }

@@ -12,7 +12,7 @@ Item {
 
     function selectDrive(index) {
         if (rowCount > 0 && controller.selectedDrive !== index)
-            controller.selectedDrive = Math.max(0, Math.min(rowCount - 1, index))
+            controller.selectedDrive = index
     }
     function moveSelection(delta) {
         if (rowCount > 0)
@@ -30,7 +30,6 @@ Item {
     DriveIllustration {
         driveCount: root.rowCount
         selectedIndex: root.activeRow
-        scrollMode: root.scrollMode
         onClicked: index => root.selectDrive(index)
     }
 

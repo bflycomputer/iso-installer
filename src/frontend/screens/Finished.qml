@@ -4,8 +4,8 @@ import ".."
 Rectangle {
     id: root
 
-    readonly property bool failed: Boolean(controller.failed)
-    readonly property string failureMessage: String(controller.failureMessage)
+    readonly property bool failed: controller.failed
+    readonly property string failureMessage: controller.failureMessage
     readonly property bool manualRestart: !failed && (!controller.powerAvailable || controller.errorMessage !== "")
     readonly property real designScale: Math.min(width / Theme.canvasW, height / Theme.canvasH)
 
@@ -200,15 +200,10 @@ Rectangle {
                 id: message
                 objectName: "completionMessage"
                 width: messageArea.width
-                text: {
-                    let paragraphs = root.failed
-                        ? [root.failureMessage || "The installation failed before it finished."]
-                        : ["Pond has been installed successfully."]
-                    paragraphs.push(root.failed
-                        ? "Please reach out to us so we can fix it. You can also try shutting down and trying again."
-                        : "You can now restart to boot into Pond. Thank you for joining our Early Preview.")
-                    return paragraphs.join("\n\n")
-                }
+                text: root.failed
+                      ? (root.failureMessage || "The installation failed before it finished.")
+                        + "\n\nPlease reach out to us so we can fix it. You can also try shutting down and trying again."
+                      : "Pond has been installed successfully.\n\nYou can now restart to boot into Pond. Thank you for joining our Early Preview."
                 textFormat: Text.PlainText
                 color: "#dec2ff"
                 opacity: 0.7

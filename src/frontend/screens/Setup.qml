@@ -160,10 +160,10 @@ Item {
         typeAheadReset.restart()
 
         const values = choices(activeRow)
-        const ignored = activeRow === 2 ? /[^a-z0-9+-]+/g : /[^a-z0-9]+/g
+        const ignored = /[^a-z0-9]+/g
         const query = typeAhead.replace(ignored, "")
         function rank(item) {
-            const fields = [item.label, item.detail, item.value, item.search]
+            const fields = [item.label, item.value]
             let combined = ""
             for (let f = 0; f < fields.length; ++f) {
                 const field = String(fields[f] || "").toLocaleLowerCase().replace(ignored, "")
@@ -211,6 +211,7 @@ Item {
         Field {
             id: row
             required property int index
+            z: 295
             x: 598
             y: 396 + index * 80
             label: root.labels[index]
@@ -244,14 +245,7 @@ Item {
         anchors.fill: parent
         z: 290
         visible: root.dropdownOpen
-        onClicked: function(mouse) {
-            const candidate = Math.floor((mouse.y - 396) / 80)
-            if (mouse.x >= 598 && mouse.x < 1129 && candidate >= 0 && candidate < 3
-                    && mouse.y < 396 + candidate * 80 + 68)
-                root.openDropdown(candidate)
-            else
-                root.closeDropdown()
-        }
+        onClicked: root.closeDropdown()
     }
 
     ChoiceDropdown {

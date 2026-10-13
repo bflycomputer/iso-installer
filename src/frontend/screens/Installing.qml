@@ -6,26 +6,17 @@ import ".."
 Rectangle {
     id: root
 
-    // Names the machine being installed onto; the design shows up to four
-    // words as coloured tags.
-    readonly property string deviceName: controller.deviceName ? String(controller.deviceName) : "Pond"
-
     color: Theme.bg
 
     readonly property real designScale: Math.min(width / 1728, height / 1117)
     property int tick: 0
-    readonly property real progress: Math.max(0, Math.min(1, controller.progress))
+    readonly property real progress: controller.progress
     readonly property int filledBlocks: Math.floor(progress * 10)
     property int completedCount: 0
 
-    readonly property var words: {
-        const parts = String(deviceName).trim().split(/\s+/)
-        const kept = []
-        for (let i = 0; i < parts.length && kept.length < 4; ++i)
-            if (parts[i].length > 0)
-                kept.push(parts[i])
-        return kept.length > 0 ? kept : ["Pond"]
-    }
+    // Names the machine being installed onto; the design shows up to four
+    // words as coloured tags.
+    readonly property var words: controller.deviceName.trim().split(/\s+/).slice(0, 4)
 
     readonly property int bufferFrame: Math.floor(tick / 3) % 2
     readonly property var loaderFrames: [
@@ -77,7 +68,6 @@ Rectangle {
         height: 1117
         anchors.centerIn: parent
         scale: root.designScale
-        transformOrigin: Item.Center
 
         Column {
             x: 824

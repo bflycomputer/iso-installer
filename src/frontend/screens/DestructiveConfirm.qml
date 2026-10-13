@@ -5,7 +5,6 @@ Item {
     id: root
     anchors.fill: parent
 
-    readonly property int rowCount: 0
     readonly property var option: controller.installOptions[controller.selectedInstallOption] || ({})
     readonly property var drive: controller.selectedDriveData
 

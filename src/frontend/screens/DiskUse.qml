@@ -20,7 +20,6 @@ Item {
             chooseIndex((activeRow + delta + rowCount) % rowCount)
     }
     function accept() {
-        controller.selectedInstallOption = activeRow
         controller.advance()
     }
 

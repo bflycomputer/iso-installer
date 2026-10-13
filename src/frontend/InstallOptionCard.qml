@@ -14,8 +14,6 @@ Item {
     signal selected()
     signal accepted()
 
-    width: 720
-    height: 99
     implicitWidth: 720
     implicitHeight: 99
     opacity: enabled ? 1 : 0.55

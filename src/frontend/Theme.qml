@@ -99,7 +99,6 @@ QtObject {
 
     property FontMetrics fmBase: FontMetrics { font: theme.base }
     property FontMetrics fmSm: FontMetrics { font: theme.sm }
-    property FontMetrics fmXs: FontMetrics { font: theme.xs }
     property FontMetrics fmBaseR: FontMetrics { font: theme.baseR }
     property FontMetrics fmSmR: FontMetrics { font: theme.smR }
 
@@ -108,7 +107,6 @@ QtObject {
     }
     function capYBase(capTop) { return capY(fmBase, lhBase, capTop) }
     function capYSm(capTop) { return capY(fmSm, lhSm, capTop) }
-    function capYXs(capTop) { return capY(fmXs, lhXs, capTop) }
     function capYBaseR(capTop) { return capY(fmBaseR, lhBase, capTop) }
     function capYSmR(capTop) { return capY(fmSmR, lhSm, capTop) }
 }

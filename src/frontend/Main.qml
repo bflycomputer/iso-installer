@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Window
-import "."
 
 Window {
     id: window
@@ -16,7 +15,6 @@ Window {
         visible: !window.standaloneScreen
         focus: !window.standaloneScreen
         screen: window.standaloneScreen ? "" : "screens/" + controller.route + ".qml"
-        onBack: controller.back()
     }
 
     Loader {
