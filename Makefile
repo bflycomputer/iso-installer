@@ -2,18 +2,17 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
-SUDO ?= $(if $(filter 0,$(shell id -u)),,sudo)
 VERSION ?=
 FONT_DIR ?=
-PROFILE := .cache/profile
+PROFILE := build/archiso
 export VERSION FONT_DIR
 
 .PHONY: help iso profile check
 
 help:
 	@printf '%s\n' \
-		'make iso VERSION=X.Y.Z FONT_DIR=/path/to/fonts   Build the ISO and checksum in dist/' \
-		'make profile VERSION=X.Y.Z FONT_DIR=/path/to/fonts   Stage the live profile in .cache/profile/' \
+		'make iso VERSION=X.Y.Z FONT_DIR=/path/to/fonts   Build the ISO and checksum in out/' \
+		'make profile VERSION=X.Y.Z FONT_DIR=/path/to/fonts   Stage the live profile in build/archiso/' \
 		'make check           Check shell syntax and whitespace'
 
 profile:
@@ -32,10 +31,10 @@ profile:
 	cp "$$FONT_DIR"/PondGramercy-*.otf $(PROFILE)/airootfs/usr/share/fonts/otf-pond-gramercy/
 
 iso: profile
-	$(SUDO) rm -rf --one-file-system .cache/work
-	$(SUDO) env POND_INSTALLER_VERSION="$$VERSION" mkarchiso -v -w .cache/work -o dist $(PROFILE)
-	$(SUDO) chown -R "$$(id -u):$$(id -g)" dist
-	cd dist && sha256sum "pond-installer-$$VERSION-x86_64.iso" > "pond-installer-$$VERSION-x86_64.iso.sha256"
+	build_dir=$$(mktemp -d build/run.XXXXXX); \
+		POND_INSTALLER_VERSION="$$VERSION" mkarchiso -v -r -w "$$build_dir/work" -o out $(PROFILE); \
+		rmdir "$$build_dir"
+	cd out && sha256sum "pond-installer-$$VERSION-x86_64.iso" > "pond-installer-$$VERSION-x86_64.iso.sha256"
 
 check:
 	bash -n archiso/profiledef.sh
