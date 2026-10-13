@@ -10,7 +10,6 @@ Item {
     readonly property bool childOwnsFocus: activeRow < fields.count
     readonly property int rowCount: rows.length + 1
     property int activeRow: 0
-    property bool validationRequested: false
 
     readonly property var rows: [
         { label: "Username", placeholder: "Enter username", key: "username", error: "usernameError" },
@@ -19,7 +18,8 @@ Item {
         { label: "Computer name", placeholder: "Enter computer name", key: "hostname", error: "hostnameError" }
     ]
     readonly property int completedCount: rows.filter((row, index) => fieldCompleted(index)).length
-    readonly property bool canSubmit: rows.every(row => controller[row.error] === "")
+    readonly property bool canSubmit: rows.every(row => controller[row.key] !== "")
+        && ["usernameError", "passwordError", "hostnameError"].every(error => controller[error] === "")
 
     Keys.onTabPressed: function(event) { moveSelection(event.modifiers & Qt.ShiftModifier ? -1 : 1) }
     Keys.onBacktabPressed: moveSelection(-1)
@@ -48,8 +48,6 @@ Item {
     }
 
     function submit() {
-        validationRequested = true
-
         // The controller validates and may replace this screen synchronously,
         // so the field to return to is chosen before advancing.
         const invalid = firstInvalidRow()
@@ -60,6 +58,9 @@ Item {
 
     function firstInvalidRow() {
         return rows.findIndex(row => controller[row.error] !== "")
+    }
+    function liveError(row) {
+        return controller[row.key] !== "" && row.error !== "confirmationError" ? controller[row.error] : ""
     }
     function fieldCompleted(index) {
         const row = rows[index]
@@ -167,10 +168,10 @@ Item {
     }
 
     ErrorText {
-        visible: root.validationRequested && text !== ""
+        objectName: "profileError"
         y: 727
-        text: (root.activeRow < root.rows.length ? controller[root.rows[root.activeRow].error] : "")
-              || controller.errorMessage
+        text: (root.activeRow < root.rows.length ? root.liveError(root.rows[root.activeRow]) : "")
+              || root.rows.map(root.liveError).find(error => error) || controller.errorMessage
     }
 
     NavBar {
