@@ -192,7 +192,7 @@ class Controller(QObject):
     def _power(self, action):
         if self._busy:
             return
-        if os.geteuid() != 0 or not Path('/etc/pond-installer-live').is_file():
+        if not self.powerAvailable:
             self._set_error('Power controls are available only in the Pond live environment.')
             return
         try:
@@ -284,5 +284,6 @@ class Controller(QObject):
     hostnameError = Property(str, lambda self: hostname_error(self._hostname), notify=profileChanged)
     progress = Property(float, lambda self: self._progress, notify=installationChanged)
     failed = Property(bool, lambda self: self._failed, notify=installationChanged)
+    powerAvailable = Property(bool, lambda self: os.geteuid() == 0 and Path('/etc/pond-installer-live').is_file(), constant=True)
     failureMessage = Property(str, lambda self: self._failure, notify=installationChanged)
     warnings = Property(str, lambda self: '\n'.join(self._warnings), notify=installationChanged)

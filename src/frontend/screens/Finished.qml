@@ -6,13 +6,15 @@ Rectangle {
 
     readonly property bool failed: Boolean(controller.failed)
     readonly property string failureMessage: String(controller.failureMessage)
-    readonly property string warnings: String(controller.warnings)
+    readonly property bool manualRestart: !failed && (!controller.powerAvailable || controller.errorMessage !== "")
     readonly property real designScale: Math.min(width / Theme.canvasW, height / Theme.canvasH)
 
     color: Theme.bg
     focus: true
 
     function submit() {
+        if (!navigation.primaryEnabled)
+            return
         if (failed)
             controller.powerOffComputer()
         else
@@ -186,7 +188,7 @@ Rectangle {
             id: messageArea
             x: 782
             y: Theme.capY(messageMetrics, 24, 569)
-            width: root.failed || root.warnings.length > 0 ? 427 : 344
+            width: root.failed ? 427 : 344
             height: Math.min(320, message.height)
             contentHeight: message.height
             contentWidth: width
@@ -202,8 +204,6 @@ Rectangle {
                     let paragraphs = root.failed
                         ? [root.failureMessage || "The installation failed before it finished."]
                         : ["Pond has been installed successfully."]
-                    if (root.warnings.length > 0)
-                        paragraphs.push(root.warnings)
                     paragraphs.push(root.failed
                         ? "Please reach out to us so we can fix it. You can also try shutting down and trying again."
                         : "You can now restart to boot into Pond. Thank you for joining our Early Preview.")
@@ -237,14 +237,16 @@ Rectangle {
             objectName: "completionNavigation"
             x: 782
             y: Math.max(693, messageArea.y + messageArea.height + 28)
-            label: root.failed ? "Shut down" : "Restart"
+            label: root.failed ? "Shut down" : root.manualRestart ? "Restart manually" : "Restart"
+            primaryEnabled: !root.manualRestart
             showBack: false
-            activeFocusOnTab: true
+            activeFocusOnTab: primaryEnabled
             focused: activeFocus
         }
 
         ErrorText {
             objectName: "completionActionError"
+            visible: root.failed && text !== ""
             x: 782
             y: navigation.y + navigation.height + 24
             anchors.horizontalCenter: undefined
