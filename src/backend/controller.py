@@ -25,6 +25,7 @@ class Controller(QObject):
     selectedInstallOptionChanged = Signal()
     profileChanged = Signal()
     installationChanged = Signal()
+    restartRequested = Signal(str)
     _probed = Signal(object)
 
     def __init__(self, parent=None):
@@ -32,7 +33,7 @@ class Controller(QObject):
         self._route, self._history, self._error = 'Setup', [], ''
         self._timezone = bytes(QTimeZone.systemTimeZoneId()).decode()
         self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone)
-        self._locale, self._layout = 'en_US.UTF-8', 'us'
+        self._locale, self._layout = 'en_US.UTF-8', os.environ.get('XKB_DEFAULT_LAYOUT', 'us')
         self._network, self._drive, self._option = -1, 0, 0
         self._username = self._password = self._confirmation = self._hostname = ''
         self._progress, self._failed, self._failure, self._warnings = 0.0, False, '', []
@@ -231,15 +232,15 @@ class Controller(QObject):
             self._probe_thread.join()
 
     def _choices(self, row):
-        return (self._languages, self._keyboards, self._timezones)[row]
+        return (self._keyboards, self._languages, self._timezones)[row]
 
     @Slot(int, result=int)
     def setupChoiceIndex(self, row):
         if not 0 <= row <= 2:
             return 0
         for index, item in enumerate(self._choices(row)):
-            if (row == 0 and item['value'] == self._locale) or (row == 2 and item['value'] == self._timezone) \
-                    or (row == 1 and item['value'] == self._layout):
+            if (row == 0 and item['value'] == self._layout) or (row == 2 and item['value'] == self._timezone) \
+                    or (row == 1 and item['value'] == self._locale):
                 return index
         return 0
 
@@ -249,12 +250,14 @@ class Controller(QObject):
             return
         item = self._choices(row)[index]
         if row == 0:
-            self._locale = item['value']
-        elif row == 1:
             self._layout = item['value']
+        elif row == 1:
+            self._locale = item['value']
         else:
             self._timezone = item['value']
         self.setupChanged.emit()
+        if row == 0 and self._layout != os.environ.get('XKB_DEFAULT_LAYOUT', self._layout):
+            self.restartRequested.emit(self._layout)
 
     def _label(self, row):
         return self._choices(row)[self.setupChoiceIndex(row)]['label']
@@ -277,8 +280,8 @@ class Controller(QObject):
     keyboardChoices = Property(str, lambda self: json.dumps(self._keyboards), constant=True)
     timezoneChoices = Property(str, lambda self: json.dumps(self._timezones), constant=True)
     localeName = Property(str, lambda self: self._locale, notify=setupChanged)
-    languageLabel = Property(str, lambda self: self._label(0), notify=setupChanged)
-    keyboardLabel = Property(str, lambda self: self._label(1), notify=setupChanged)
+    languageLabel = Property(str, lambda self: self._label(1), notify=setupChanged)
+    keyboardLabel = Property(str, lambda self: self._label(0), notify=setupChanged)
     timezone = Property(str, lambda self: self._timezone, notify=setupChanged)
     timezoneLabel = Property(str, lambda self: self._label(2), notify=setupChanged)
     selectedNetwork = Property(int, lambda self: self._network, _setter('_network', 'selectedNetworkChanged'), notify=selectedNetworkChanged)

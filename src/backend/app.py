@@ -22,6 +22,12 @@ def main():
     app.setDesktopFileName('pond-installer')
     engine = QQmlApplicationEngine()
     controller = Controller()
+
+    def restart(layout):
+        print(layout, flush=True)
+        app.exit(75)
+
+    controller.restartRequested.connect(restart)
     app.aboutToQuit.connect(controller.close)
     engine.rootContext().setContextProperty('controller', controller)
     engine.load(QUrl.fromLocalFile(str(Path(__file__).parent.parent / 'frontend/Main.qml')))

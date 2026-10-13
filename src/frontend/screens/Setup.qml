@@ -15,7 +15,7 @@ Item {
     property int highlightedChoice: -1
     property string typeAhead: ""
 
-    readonly property var labels: ["Language", "Keyboard", "Timezone"]
+    readonly property var labels: ["Keyboard", "Language", "Timezone"]
 
     // The controller hands the long lists over as JSON: indexing a Python-backed
     // list from QML re-converts the whole list on every access, which made
@@ -42,12 +42,12 @@ Item {
     }
 
     function choices(row) {
-        return row === 0 ? languageChoices : row === 1 ? keyboardChoices : timezoneChoices
+        return row === 0 ? keyboardChoices : row === 1 ? languageChoices : timezoneChoices
     }
 
     function currentValue(row) {
-        return row === 0 ? controller.languageLabel
-             : row === 1 ? controller.keyboardLabel : controller.timezoneLabel
+        return row === 0 ? controller.keyboardLabel
+             : row === 1 ? controller.languageLabel : controller.timezoneLabel
     }
 
     function openDropdown(row) {

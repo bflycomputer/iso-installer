@@ -1,2 +1,2 @@
-Defaults:liveuser env_keep += "WAYLAND_DISPLAY XDG_RUNTIME_DIR XCURSOR_THEME XCURSOR_SIZE"
+Defaults:liveuser env_keep += "WAYLAND_DISPLAY XDG_RUNTIME_DIR XCURSOR_THEME XCURSOR_SIZE XKB_DEFAULT_LAYOUT"
 liveuser ALL=(root) NOPASSWD: /usr/local/bin/pond-installer
