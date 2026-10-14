@@ -276,19 +276,6 @@ Rectangle {
             }
         }
 
-        Label {
-            text: "Some features may not work as expected. Please report any issues or bugs."
-            color: Theme.chromeMuted
-            font: Theme.xs
-            lh: Theme.lhXs
-            wrapMode: Text.WordWrap
-            width: 142
-            anchors.right: parent.right
-            anchors.rightMargin: 94
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 13
-        }
-
         Item {
             width: 80
             height: 80

@@ -280,19 +280,5 @@ Rectangle {
             font.letterSpacing: -0.64
         }
 
-        Text {
-            x: 1580
-            y: 1057
-            width: 142
-            text: "Some features may not work as expected. Please report any issues or bugs."
-            color: Theme.chromeMuted
-            wrapMode: Text.WordWrap
-            lineHeight: 16
-            lineHeightMode: Text.FixedHeight
-            font.family: Theme.onest.name
-            font.pixelSize: 11
-            font.weight: Font.Medium
-            font.letterSpacing: 0.11
-        }
     }
 }
