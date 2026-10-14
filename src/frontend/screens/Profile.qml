@@ -179,5 +179,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         label: "Confirm"
         primaryEnabled: root.canSubmit
+        focused: root.activeRow === fields.count
     }
 }
