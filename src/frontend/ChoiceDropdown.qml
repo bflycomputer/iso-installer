@@ -12,9 +12,13 @@ Item {
     property bool searchable: false
     property Item shell: null
     property alias query: search.text
+    property point pointer: Qt.point(-1, -1)
 
     signal chosen(int index)
+    signal highlighted(int index)
     signal tabbed(int direction)
+
+    onVisibleChanged: pointer = Qt.point(-1, -1)
 
     function focusSearch() { search.forceActiveFocus() }
 
@@ -87,7 +91,14 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onPositionChanged: function(mouse) {
+                        const point = mapToItem(null, mouse.x, mouse.y)
+                        if (root.pointer.x >= 0 && (point.x !== root.pointer.x || point.y !== root.pointer.y))
+                            root.highlighted(choiceRow.index)
+                        root.pointer = point
+                    }
                     onClicked: root.chosen(choiceRow.index)
                 }
             }
@@ -125,6 +136,7 @@ Item {
             }
 
             TapHandler { onTapped: root.focusSearch() }
+            HoverHandler { cursorShape: Qt.IBeamCursor }
 
             Label {
                 x: 20

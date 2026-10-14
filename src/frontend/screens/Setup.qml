@@ -264,6 +264,7 @@ Item {
         shell: root.shell
         choices: root.dropdownChoices
         highlightedIndex: root.highlightedChoice
+        onHighlighted: function(index) { root.highlightedChoice = index }
         onChosen: function(index) { root.selectChoice(index) }
         onTabbed: function(direction) {
             root.closeDropdown()
