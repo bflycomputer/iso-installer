@@ -11,8 +11,10 @@ Item {
     property bool passwordVisible: false
 
     readonly property bool connecting: controller.wifi.connecting
+    property bool requiresPassword: true
+    property bool connected: controller.wifi.get(controller.selectedNetwork).active === true
     property bool joinFailed: false
-    readonly property bool editing: !connecting && !joinFailed
+    readonly property bool editing: requiresPassword && !connecting && !connected && !joinFailed
     readonly property int selectedStrength:
         controller.selectedNetworkStrength
 
@@ -35,7 +37,11 @@ Item {
     function submit() {
         if (connecting)
             return
-        if (joinFailed) {
+        if (connected) {
+            controller.advance()
+            return
+        }
+        if (joinFailed && requiresPassword) {
             joinFailed = false
             return
         }
@@ -44,6 +50,7 @@ Item {
 
     Connections {
         target: controller.wifi
+        function onConnectionSucceeded() { root.connected = true }
         function onConnectionFailed() { root.joinFailed = true }
     }
 
@@ -56,6 +63,7 @@ Item {
     }
 
     Component.onCompleted: {
+        requiresPassword = controller.wifi.get(controller.selectedNetwork).secured === true
         focusPassword()
     }
     onVisibleChanged: if (visible) focusPassword()
@@ -72,7 +80,8 @@ Item {
         y: 454
         showStatus: !root.editing
         busy: root.connecting
-        message: root.connecting ? "Joining" : "Failed to connect"
+        success: root.connected
+        message: root.connecting ? "Connecting" : root.connected ? "Connected" : "Failed to connect"
 
         Item {
             anchors.fill: parent
@@ -179,6 +188,6 @@ Item {
         y: 661
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 12
-        label: root.joinFailed ? "Try again" : "Connect"
+        label: root.connected ? "Next" : root.joinFailed ? "Try again" : "Connect"
     }
 }

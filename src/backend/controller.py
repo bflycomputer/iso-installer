@@ -40,7 +40,6 @@ class Controller(QObject):
         self._disks, self._storage_ready, self._installer, self._busy = [], False, None, False
         self._drives = DictModel(['name', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
         self._wifi = WifiModel(self)
-        self._wifi.connectionSucceeded.connect(self._connected)
         self._wifi.connectionFailed.connect(self._connection_failed)
         self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)
         self._wifi.countChanged.connect(self.selectedNetworkChanged.emit)
@@ -110,13 +109,9 @@ class Controller(QObject):
         self._error = message
         self.errorMessageChanged.emit()
 
-    def _connected(self):
-        if self._route in ('WifiList', 'WifiPassword'):
-            self._go('DriveSelect')
-
     def _ethernet_changed(self):
-        if self._wifi.ethernetConnected:
-            self._connected()
+        if self._wifi.ethernetConnected and self._route in ('WifiList', 'WifiPassword'):
+            self._go('DriveSelect')
 
     def _connection_failed(self, message):
         if self._route in ('WifiList', 'WifiPassword'):
@@ -129,7 +124,7 @@ class Controller(QObject):
         if self._busy:
             return
         if route == 'Setup':
-            if self._wifi.ethernetConnected:
+            if self._wifi.networkConnected:
                 self._go('DriveSelect')
             else:
                 self._go('WifiList')
@@ -142,10 +137,12 @@ class Controller(QObject):
                     self._set_error('Select a Wi-Fi network or connect a network cable.')
             elif network['active']:
                 self._go('DriveSelect')
-            elif network['secured']:
-                self._go('WifiPassword')
             else:
-                self.connectSelectedNetwork('')
+                self._go('WifiPassword')
+                if not network['secured']:
+                    self.connectSelectedNetwork('')
+        elif route == 'WifiPassword' and self._wifi.networkConnected:
+            self._go('DriveSelect')
         elif route == 'DriveSelect' and self._disk():
             try:
                 backend.plan_install(self._disk(), backend.Mode.REPLACE, boot_mode=backend.current_boot_mode())
@@ -165,7 +162,7 @@ class Controller(QObject):
 
     @Slot()
     def back(self):
-        while self._history and self._wifi.ethernetConnected and self._history[-1] in ('WifiList', 'WifiPassword'):
+        while self._history and self._wifi.networkConnected and self._history[-1] in ('WifiList', 'WifiPassword'):
             self._history.pop()
         if self._history:
             self._route = self._history.pop()

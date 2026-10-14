@@ -5,6 +5,7 @@ Rectangle {
 
     property bool showStatus: true
     property bool busy: false
+    property bool success: false
     property string message: ""
 
     width: 358
@@ -49,14 +50,14 @@ Rectangle {
     }
 
     Label {
-        objectName: "wifiJoinFailure"
+        objectName: "wifiStatusMessage"
         visible: root.showStatus && !root.busy
         anchors.centerIn: parent
         width: parent.width - 40
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         text: root.message
-        color: Theme.statusError
+        color: root.success ? Theme.lavender : Theme.statusError
         font: Theme.xlItalic
         lh: Theme.lhXl
     }

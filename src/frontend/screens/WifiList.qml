@@ -9,23 +9,10 @@ Item {
     readonly property int rowCount: networks.count
     readonly property int activeRow: controller.selectedNetwork >= 0
         ? controller.selectedNetwork : controller.selectedSsid === "" && rowCount > 0 ? 0 : -1
-    readonly property bool connecting: controller.wifi.connecting
-    property bool joinFailed: false
-    readonly property bool scanFailed: !joinFailed && controller.wifi.errorMessage !== ""
+    readonly property bool scanFailed: controller.wifi.errorMessage !== ""
         && !controller.wifi.scanning && !controller.wifi.networkConnected
-    readonly property bool busy: connecting || (rowCount === 0 && controller.wifi.scanning)
-    readonly property bool showStatus: connecting || joinFailed || scanFailed || rowCount === 0
-
-    onConnectingChanged: if (connecting) joinFailed = false
-
-    Connections {
-        target: controller.wifi
-        function onConnectionFailed() { root.joinFailed = true }
-        function onNetworkConnectedChanged() {
-            if (controller.wifi.networkConnected)
-                root.joinFailed = false
-        }
-    }
+    readonly property bool busy: rowCount === 0 && controller.wifi.scanning
+    readonly property bool showStatus: scanFailed || rowCount === 0
 
     function moveSelection(delta) {
         if (rowCount > 0 && !showStatus)
@@ -84,7 +71,6 @@ Item {
                 required property string ssid
                 required property int strength
                 required property bool secured
-                required property bool active
 
                 width: 360
                 height: 44
@@ -105,7 +91,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 275
                     elide: Text.ElideRight
-                    text: netRow.ssid + (netRow.active ? "  • Connected" : "")
+                    text: netRow.ssid
                     color: netRow.index === root.activeRow ? Theme.onWifiActive : Theme.textWhite
                     font: Theme.sm
                     lh: Theme.lhSm
@@ -141,9 +127,7 @@ Item {
         y: 454
         visible: root.showStatus
         busy: root.busy
-        message: root.connecting ? "Joining"
-               : root.joinFailed ? "Failed to connect"
-               : root.busy ? "Scanning"
+        message: root.busy ? "Scanning"
                : root.scanFailed ? "Failed to scan"
                : controller.wifi.available ? "No Wi-Fi networks found" : "No Wi-Fi adapter found"
     }
@@ -154,9 +138,9 @@ Item {
         visible: !root.busy
         y: root.showStatus ? 661 : 716
         anchors.horizontalCenter: parent.horizontalCenter
-        label: root.joinFailed || root.scanFailed ? "Try again" : "Next"
+        label: root.scanFailed ? "Try again" : "Next"
         spacing: 12
-        primaryEnabled: !root.busy && (root.joinFailed
-            || (root.scanFailed ? controller.wifi.available : root.activeRow >= 0 || controller.wifi.networkConnected))
+        primaryEnabled: !root.busy && (root.scanFailed ? controller.wifi.available
+            : root.activeRow >= 0 || controller.wifi.networkConnected)
     }
 }
