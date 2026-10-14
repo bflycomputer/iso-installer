@@ -111,8 +111,7 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.chooseIndex(netRow.index)
-                    onDoubleClicked: {
+                    onClicked: {
                         root.chooseIndex(netRow.index)
                         root.accept()
                     }
