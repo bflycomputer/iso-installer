@@ -30,8 +30,7 @@ Item {
         const ordered = timezoneChoices.filter(item => item.value === current)
             .concat(timezoneChoices.filter(item => item.value !== current))
         const query = dropdown.query.trim().toLocaleLowerCase()
-        return ordered.filter(item => item.search.toLocaleLowerCase().split(" ").includes(query)
-            || (" " + [item.label, item.names, item.detail].join(" ")).toLocaleLowerCase().includes(" " + query))
+        return ordered.filter(item => item.aliases.some(alias => alias.toLocaleLowerCase().includes(query)))
     }
     onDropdownChoicesChanged: {
         if (activeRow === 2) {

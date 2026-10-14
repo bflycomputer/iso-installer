@@ -97,12 +97,12 @@ def timezones(current, path="/usr/share/zoneinfo/zone.tab"):
         names.update(zone.displayName(change.atUtc, QTimeZone.NameType.LongName, english) for change in changes)
         entry = entries.setdefault(label, {
             "value": value, "label": label, "offset": offset,
-            "names": set(), "search": set(),
+            "aliases": {label},
             "detail": f'GMT{"-" if offset < 0 else "+"}{abs(offset) // 3600:02}:{abs(offset) // 60 % 60:02}',
         })
-        entry["names"].update(names)
-        entry["search"].update({zone.abbreviation(now), *(change.abbreviation for change in changes)})
-    return [{**item, "names": " ".join(sorted(item["names"])), "search": " ".join(sorted(item["search"]))}
+        entry["aliases"].update(names | {entry["detail"], zone.abbreviation(now),
+                                        *(change.abbreviation for change in changes)})
+    return [{**item, "aliases": sorted(item["aliases"])}
             for item in sorted(entries.values(), key=lambda item: (item["offset"], item["label"]))]
 
 
