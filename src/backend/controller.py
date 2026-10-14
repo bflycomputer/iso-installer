@@ -63,7 +63,7 @@ class Controller(QObject):
             self._disks = []
         else:
             self._set_error('')
-            self._disks = [d for d in disk_rows if not d.busy and not d.read_only and d.identity]
+            self._disks = [d for d in disk_rows if not d.busy and not d.read_only]
         self._drives.reset(disks.drive_row(d) for d in self._disks)
         self._select_drive(0)
         self.storageReadyChanged.emit()

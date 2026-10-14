@@ -88,7 +88,6 @@ class Partition:
 @dataclass(frozen=True)
 class Disk:
     path: str
-    identity: str
     device_number: str
     size: int
     sector_size: int
@@ -124,7 +123,7 @@ def gaps(size, partitions):
 
 
 def plan_install(disk: Disk, mode: Mode, *, boot_mode: BootMode = BootMode.UEFI) -> Plan:
-    if disk.busy or disk.read_only or not disk.identity:
+    if disk.busy or disk.read_only:
         raise InstallError("The selected disk is unavailable or in use")
     if disk.size < 21 * GIB:
         raise InstallError("Pond needs at least 20GB of space")

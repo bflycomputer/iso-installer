@@ -37,7 +37,6 @@ def probe() -> tuple[Disk, ...]:
         children = list(_descendants(row))
         busy = any(any(m for m in (d.get("mountpoints") or [])) for d in children)
         busy |= any(d["type"] not in ("disk", "part") for d in children)
-        identity = (row.get("wwn") or row.get("serial") or "").strip()
         table = row.get("pttype") or ""
         parts = []
         if table:
@@ -54,25 +53,22 @@ def probe() -> tuple[Disk, ...]:
             except Exception:
                 logging.warning("Skipping unreadable storage device %s", row["path"], exc_info=True)
                 continue
-        disks.append(Disk(row["path"], identity, row["maj:min"], row["size"], row["log-sec"], table,
+        disks.append(Disk(row["path"], row["maj:min"], row["size"], row["log-sec"], table,
                           tuple(sorted(parts, key=lambda p: p.start)), busy, bool(row["ro"])))
     return tuple(disks)
 
 
 def revalidate(expected: Disk):
-    matches = [d for d in probe() if d.identity == expected.identity]
-    if len(matches) != 1 or matches[0] != expected:
+    if next((d for d in probe() if d.path == expected.path), None) != expected:
         raise InstallError("The selected disk changed; prepare a new installation plan")
 
 
 def current_partition(disk: Disk, expected: Partition, *, check_type=True):
-    matches = [d for d in probe() if d.identity == disk.identity]
-    if len(matches) != 1:
-        raise InstallError("The selected disk disappeared or its identity is ambiguous")
-    now = matches[0]
-    if (now.path, now.device_number, now.size, now.sector_size) != (
-            disk.path, disk.device_number, disk.size, disk.sector_size):
-        raise InstallError("The selected disk identity changed")
+    now = next((d for d in probe() if d.path == disk.path), None)
+    if now is None:
+        raise InstallError("The selected disk disappeared")
+    if (now.device_number, now.size, now.sector_size) != (disk.device_number, disk.size, disk.sector_size):
+        raise InstallError("The selected disk changed")
     actual = next((p for p in now.partitions if p.uuid == expected.uuid), None)
     if actual is None or (actual.path, actual.number, actual.start, actual.size) != (
             expected.path, expected.number, expected.start, expected.size):
