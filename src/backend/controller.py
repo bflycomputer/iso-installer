@@ -146,7 +146,7 @@ class Controller(QObject):
         elif route == 'DriveSelect' and self._disk():
             try:
                 backend.plan_install(self._disk(), backend.Mode.REPLACE, boot_mode=backend.current_boot_mode())
-                self._go('DiskUse' if self._disk().partitions else 'Profile')
+                self._go('DiskUse')
             except backend.InstallError as error:
                 self._set_error(str(error))
         elif route == 'DiskUse':
