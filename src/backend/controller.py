@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import threading
 
-from PySide6.QtCore import Property, QObject, QTimeZone, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 import backend
 from .job import InstallJob
@@ -31,8 +31,8 @@ class Controller(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._route, self._history, self._error = 'Setup', [], ''
-        self._timezone = bytes(QTimeZone.systemTimeZoneId()).decode()
-        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones(self._timezone)
+        self._languages, self._keyboards, self._timezones = languages(), keyboards(), timezones()
+        self._timezone = next(item['value'] for item in self._timezones if item['zone'] == 'UTC')
         self._locale, self._layout = 'en_US.UTF-8', os.environ.get('XKB_DEFAULT_LAYOUT', 'us')
         self._selected_ssid, self._drive, self._option = '', 0, 0
         self._username = self._password = self._confirmation = self._hostname = ''
@@ -96,8 +96,9 @@ class Controller(QObject):
         return options[self._option]
 
     def _profile(self):
+        zone = next(item['zone'] for item in self._timezones if item['value'] == self._timezone)
         return backend.Profile(self._username.strip(), self._password, self._hostname.strip(),
-                               self._timezone, self._locale, self._layout)
+                               zone, self._locale, self._layout)
 
     def _go(self, route):
         self._history.append(self._route)

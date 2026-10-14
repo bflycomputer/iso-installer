@@ -79,31 +79,27 @@ def keyboards(path="/usr/share/X11/xkb/rules/evdev.xml"):
     return sorted(items, key=lambda item: item["label"].casefold())
 
 
-def timezones(current, path="/usr/share/zoneinfo/zone.tab"):
-    identifiers = sorted(line.split("\t")[2].strip() for line in Path(path).read_text().splitlines()
-                         if line and not line.startswith("#"))
-    now, english, entries = QDateTime.currentDateTimeUtc(), QLocale("en_US"), {}
-    for identifier in [current, "UTC", *identifiers]:
+def timezones(directory=Path("/usr/share/zoneinfo")):
+    now, english, representatives, entries = QDateTime.currentDateTimeUtc(), QLocale("en_US"), {}, {}
+    for identifier in ["UTC", *(line.split("\t")[2].strip() for table in ("zonenow.tab", "zone.tab")
+                                for line in (directory / table).read_text().splitlines()
+                                if line and not line.startswith("#"))]:
         zone = QTimeZone(identifier.encode())
-        standard_name = zone.displayName(QTimeZone.TimeType.StandardTime, QTimeZone.NameType.LongName, english)
-        # Named IDs distinguish regions with different daylight-saving rules.
-        zone_id = QTimeZone.ianaIdToWindowsId(identifier.encode())
-        label = bytes(zone_id).decode() or standard_name
-        default = bytes(QTimeZone.windowsIdToDefaultIanaId(zone_id)).decode() or identifier
-        value = identifier if identifier == current else default
-        offset = QTimeZone(value.encode()).offsetFromUtc(now)
-        changes = zone.transitions(now, now.addYears(1))
-        names = {standard_name, zone.displayName(now, QTimeZone.NameType.LongName, english)}
-        names.update(zone.displayName(change.atUtc, QTimeZone.NameType.LongName, english) for change in changes)
-        entry = entries.setdefault(label, {
-            "value": value, "label": label, "offset": offset,
-            "aliases": {label},
-            "detail": f'GMT{"-" if offset < 0 else "+"}{abs(offset) // 3600:02}:{abs(offset) // 60 % 60:02}',
-        })
-        entry["aliases"].update(names | {entry["detail"], zone.abbreviation(now),
-                                        *(change.abbreviation for change in changes)})
-    return [{**item, "aliases": sorted(item["aliases"])}
-            for item in sorted(entries.values(), key=lambda item: (item["offset"], item["label"]))]
+        changes = zone.transitions(now, now.addYears(20))
+        representative = representatives.setdefault((zone.offsetFromUtc(now), zone.abbreviation(now), *(
+            (change.atUtc.toSecsSinceEpoch(), change.offsetFromUtc, change.abbreviation) for change in changes)), identifier)
+        for date in [now, *(change.atUtc for change in changes)]:
+            name, offset = zone.displayName(date, QTimeZone.NameType.LongName, english), zone.offsetFromUtc(date)
+            entry = entries.setdefault(name, {}).setdefault(representative, {"zone": identifier, "offset": offset, "aliases": {name}})
+            entry["aliases"].update({zone.abbreviation(date),
+                                     f'GMT{"-" if offset < 0 else "+"}{abs(offset) // 3600:02}:{abs(offset) // 60 % 60:02}'})
+    items = {}
+    for name, zones in entries.items():
+        for entry in zones.values():
+            label = name if len(zones) == 1 else f'{name} – {entry["zone"].rpartition("/")[2].replace("_", " ")}'
+            items[label] = {"value": label, "label": label, "zone": entry["zone"], "offset": entry["offset"],
+                            "aliases": sorted(entry["aliases"] | {label})}
+    return sorted(items.values(), key=lambda item: (item["offset"], item["label"]))
 
 
 def device_name():
