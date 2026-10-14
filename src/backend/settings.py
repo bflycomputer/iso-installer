@@ -1,13 +1,13 @@
 """Live-system setup choices and profile field validation."""
+from collections import Counter
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from PySide6.QtCore import QDateTime, QLocale, QTimeZone
 
 from .model import HOSTNAME, MAX_PASSWORD_LENGTH, USERNAME
 
-LANGUAGE_PRIORITY = ["en_US.UTF-8", "en_GB.UTF-8", "fr_FR.UTF-8", "de_DE.UTF-8", "es_ES.UTF-8", "ar_SA.UTF-8",
-                     "bn_BD"]
-LANGUAGE_LABELS = dict(zip(LANGUAGE_PRIORITY, ["English (US)", "English (UK)", "French", "German", "Spanish", "Arabic", "Bengali"]))
+LANGUAGE_PRIORITY = ["en", "fr", "de", "es", "ar", "bn"]
+SCRIPT_MODIFIERS = {"latin": "Latn", "cyrillic": "Cyrl", "devanagari": "Deva"}
 
 
 # Trim account names, but preserve passwords exactly as entered.
@@ -48,18 +48,26 @@ def hostname_error(value):
 
 
 def languages(path="/usr/share/i18n/SUPPORTED"):
-    items = []
+    groups = {}
     for line in Path(path).read_text().splitlines():
         columns = line.split()
         if len(columns) == 2 and columns[1] == "UTF-8":
-            locale = QLocale(columns[0].split(".")[0].split("@")[0])
+            base, _, modifier = columns[0].split(".")[0].partition("@")
+            locale = QLocale(base)
             if locale.name() != "C":
-                items.append({"label": LANGUAGE_LABELS.get(columns[0], "{} ({})".format(
-                                  QLocale.languageToString(locale.language()), QLocale.territoryToString(locale.territory()))),
-                              "value": columns[0]})
-    items.sort(key=lambda i: (LANGUAGE_PRIORITY.index(i["value"]) if i["value"] in LANGUAGE_PRIORITY
-                              else len(LANGUAGE_PRIORITY), i["label"]))
-    return items
+                script = QLocale.codeToScript(SCRIPT_MODIFIERS[modifier]) if modifier in SCRIPT_MODIFIERS else locale.script()
+                variant = "" if modifier in SCRIPT_MODIFIERS else modifier
+                groups.setdefault((locale.language(), script, variant), {}).setdefault(base.partition("_")[2], columns[0])
+    scripts = Counter(language for language, _, variant in groups if not variant)
+    items = []
+    for (language, script, variant), locales in groups.items():
+        detail = variant.title() or (QLocale.scriptToString(script) if scripts[language] > 1 else "")
+        default = QLocale.territoryToCode(QLocale(language, script, QLocale.AnyTerritory).territory())
+        items.append({"label": QLocale.languageToString(language) + (f" ({detail})" if detail else ""),
+                      "value": locales.get(default, next(iter(locales.values())))})
+    rank = lambda item: item["value"].split("_")[0]
+    return sorted(items, key=lambda item: (LANGUAGE_PRIORITY.index(rank(item)) if rank(item) in LANGUAGE_PRIORITY
+                                           else len(LANGUAGE_PRIORITY), item["label"]))
 
 
 def keyboards(path="/usr/share/X11/xkb/rules/evdev.xml"):
