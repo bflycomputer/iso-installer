@@ -99,7 +99,8 @@ Item {
             return
         setValue(activeRow, dropdownChoices[index].value)
         closeDropdown()
-        activeRow = activeRow + 1
+        // Choosing a value must not automatically select Confirm.
+        activeRow = Math.min(activeRow + 1, continueRow - 1)
     }
 
     function moveSelection(delta) {
