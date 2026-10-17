@@ -42,10 +42,8 @@ def _validate_esp(plan, mount):
         run(["umount", str(mount)])
 
 
-def _execute(plan, profile, archive, progress):
+def _execute(plan, profile, progress):
     _preflight()
-    system.verify_rootfs(archive)
-    progress(0.60)
     os.unshare(os.CLONE_NEWNS)
     run(["mount", "--make-rprivate", "/"])
     target = Path(tempfile.mkdtemp(prefix="pond-target-", dir="/mnt"))
@@ -61,6 +59,10 @@ def _execute(plan, profile, archive, progress):
         boot, root = storage.create_partitions(plan, created)
         storage.current_partition(plan.disk, root)
         system.mount_root(root, target)
+        progress(0.04)
+        archive = system.fetch_rootfs(target / "var/tmp")
+        system.verify_rootfs(archive)
+        progress(0.60)
         system.provision(target, root, boot if uefi else None, archive, profile, progress)
         storage.current_partition(plan.disk, boot)
         if uefi:
@@ -128,19 +130,16 @@ def _execute(plan, profile, archive, progress):
     return tuple(warnings)
 
 
-def install(plan: Plan, profile: Profile, archive: Path, progress=lambda value: None) -> tuple[str, ...]:
+def install(plan: Plan, profile: Profile, progress=lambda value: None) -> tuple[str, ...]:
     """Install in the dedicated child process, with a private mount namespace.
 
-    The caller owns archive acquisition and must keep its contents unchanged
-    until this call returns. A failed replacement cannot recover erased data.
-    Power-loss resume is not supported.
+    A failed replacement cannot recover erased data. Power-loss resume is not supported.
     """
     profile.validate()
-    archive = Path(archive).resolve(strict=True)
     fd = os.open("/run/pond-installer.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise InstallError("Another Pond installation is in progress") from error
-        return _execute(plan, profile, archive, progress)
+        return _execute(plan, profile, progress)

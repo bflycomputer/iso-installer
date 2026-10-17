@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import signal
 import sys
-import tempfile
 
 import backend
 from backend.model import Partition
@@ -30,15 +29,11 @@ def execute(data, report):
     if os.geteuid() != 0 or not Path('/etc/pond-installer-live').is_file():
         raise backend.InstallError('Installation requires the installer live environment as root')
     plan, profile = decode(data)
-    # Reject an outdated confirmation before downloading the payload.
     revalidate(plan.disk)
     def progress(value):
         report({'type': 'progress', 'value': value})
 
-    with tempfile.TemporaryDirectory(prefix='pond-download-', dir='/var/tmp') as directory:
-        progress(0.04)
-        archive = backend.fetch_rootfs(Path(directory))
-        warnings = backend.install(plan, profile, archive, progress)
+    warnings = backend.install(plan, profile, progress)
     progress(1)
     report({'type': 'done', 'warnings': list(warnings)})
 

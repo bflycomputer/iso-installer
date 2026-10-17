@@ -95,6 +95,7 @@ def configure_hardware(target, progress=lambda value: None):
 
 def provision(target, root, esp, archive, profile, progress=lambda value: None):
     run(["bsdtar", "--numeric-owner", "--acls", "--xattrs", "-xpf", str(archive), "-C", str(target)])
+    Path(archive).unlink(missing_ok=True)
     progress(0.78)
     (target / "boot/efi").mkdir(parents=True, exist_ok=True)
     root_uuid = run(["blkid", "-s", "UUID", "-o", "value", root.path]).stdout.strip()
