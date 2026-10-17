@@ -36,8 +36,8 @@ def _validate_esp(plan, mount):
     run(["mount", "-t", "vfat", "-o", "ro,nosuid,nodev,noexec,umask=0077", plan.esp.path, str(mount)])
     try:
         space = os.statvfs(mount)
-        if space.f_bavail * space.f_frsize < 16 * 1024**2:
-            raise InstallError("The EFI partition needs at least 16 MiB free")
+        if space.f_bavail * space.f_frsize < 32 * 1024**2:
+            raise InstallError("The EFI partition needs at least 32 MiB free")
     finally:
         run(["umount", str(mount)])
 
@@ -85,6 +85,8 @@ def _execute(plan, profile, progress):
             shutil.copyfile(target / "root/grubx64.efi", loader)
             if not loader.stat().st_size:
                 raise InstallError("Pond's EFI loader is empty")
+            (esp_mount / "EFI/BOOT").mkdir(exist_ok=True)
+            shutil.copyfile(loader, esp_mount / "EFI/BOOT/BOOTX64.EFI")
             (target / "root/grubx64.efi").unlink()
             run(["sync"])
             run(["efibootmgr", "--create", "--disk", plan.disk.path,
