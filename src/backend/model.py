@@ -126,7 +126,7 @@ def plan_install(disk: Disk, mode: Mode, *, boot_mode: BootMode = BootMode.UEFI)
     if disk.busy or disk.read_only:
         raise InstallError("The selected disk is unavailable or in use")
     if disk.size < 21 * GIB:
-        raise InstallError("Pond needs at least 20GB of space")
+        raise InstallError("Pond needs at least 22GB of space")
     esps = [p for p in disk.partitions if p.kind == ESP_TYPE]
     if boot_mode is BootMode.UEFI and len(esps) > 1:
         raise InstallError(f"This disk has {len(esps)} EFI partitions, wipe it before attempting to install")
