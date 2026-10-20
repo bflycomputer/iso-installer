@@ -11,9 +11,12 @@ from backend.model import Partition
 from backend.storage import revalidate
 
 
-def request(plan, profile):
-    return {'disk': asdict(plan.disk), 'mode': plan.mode.value,
-            'boot_mode': plan.boot_mode.value, 'profile': asdict(profile)}
+def request(plan, profile, archive=None):
+    payload = {'disk': asdict(plan.disk), 'mode': plan.mode.value,
+               'boot_mode': plan.boot_mode.value, 'profile': asdict(profile)}
+    if archive is not None:
+        payload['archive'] = str(archive)
+    return payload
 
 
 def decode(data):
@@ -22,18 +25,19 @@ def decode(data):
     plan = backend.plan_install(backend.Disk(**disk), backend.Mode(data['mode']),
                                 boot_mode=backend.BootMode(data['boot_mode']))
     profile = backend.Profile(**data['profile'])
-    return plan, profile
+    archive = Path(data['archive']) if data.get('archive') else None
+    return plan, profile, archive
 
 
 def execute(data, report):
     if os.geteuid() != 0 or not Path('/etc/pond-installer-live').is_file():
         raise backend.InstallError('Installation requires the installer live environment as root')
-    plan, profile = decode(data)
+    plan, profile, archive = decode(data)
     revalidate(plan.disk)
     def progress(value):
         report({'type': 'progress', 'value': value})
 
-    warnings = backend.install(plan, profile, progress)
+    warnings = backend.install(plan, profile, progress, archive=archive)
     progress(1)
     report({'type': 'done', 'warnings': list(warnings)})
 

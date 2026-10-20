@@ -18,6 +18,7 @@ ROOT_TYPE = "0fc63daf-8483-4772-8e79-3d69d8477de4"
 BIOS_TYPE = "21686148-6449-6e6f-744e-656564454649"
 ROOTFS_SHA256 = "1feff559c2f8179a12fad152e6c31fc089f9f28b616f188605170f37819115b3"
 ROOTFS_URL = f"https://releases.butterfly.so/rootfs/{ROOTFS_SHA256}/pond-rootfs.tar.zst"
+ROOTFS_STAGING_RESERVE = 512 * MIB
 SUBVOLUMES = (
     ("@", "/"), ("@home", "/home"), ("@root", "/root"), ("@srv", "/srv"),
     ("@log", "/var/log"), ("@cache", "/var/cache"), ("@tmp", "/var/tmp"),

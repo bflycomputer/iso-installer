@@ -1,4 +1,5 @@
 """Setup flow and Qt bindings"""
+from contextlib import suppress
 import json
 import logging
 import os
@@ -10,6 +11,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 import backend
 from .job import InstallJob
+from .prefetch import PrefetchJob
 from .settings import confirmation_error, device_name, hostname_error, keyboards, languages, password_error, timezones, username_error
 from . import disks
 from .wifi import DictModel, WifiModel
@@ -38,16 +40,21 @@ class Controller(QObject):
         self._username = self._password = self._confirmation = self._hostname = ''
         self._progress, self._failed, self._failure, self._warnings = 0.0, False, '', []
         self._disks, self._storage_ready, self._installer, self._busy = [], False, None, False
+        self._pending_plan = self._pending_profile = None
         self._drives = DictModel(['name', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
         self._wifi = WifiModel(self)
         self._wifi.connectionFailed.connect(self._connection_failed)
         self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)
+        self._wifi.networkConnectedChanged.connect(self._network_changed)
         self._wifi.countChanged.connect(self.selectedNetworkChanged.emit)
         self.routeChanged.connect(lambda: self._wifi.setScanEnabled(self._route == 'WifiList'))
+        self._prefetch = PrefetchJob(self)
+        self._prefetch.progressChanged.connect(self._prefetch_progress)
         self._probed.connect(self._set_disks)
         self.profileChanged.connect(lambda: self._set_error(''))
         self._probe_thread = threading.Thread(target=self._probe, daemon=True)
         self._probe_thread.start()
+        self._network_changed()
 
     def _probe(self):
         try:
@@ -113,6 +120,16 @@ class Controller(QObject):
     def _ethernet_changed(self):
         if self._wifi.ethernetConnected and self._route in ('WifiList', 'WifiPassword'):
             self._go('DriveSelect')
+
+    def _network_changed(self):
+        if self._wifi.networkConnected:
+            self._prefetch.start()
+        elif self._prefetch.active:
+            self._prefetch.cancel()
+
+    def _prefetch_progress(self, fraction):
+        if self._route == 'Installing' and self._installer is not None:
+            self._progressed(0.04 + 0.56 * fraction)
 
     def _connection_failed(self, message):
         if self._route in ('WifiList', 'WifiPassword'):
@@ -194,9 +211,25 @@ class Controller(QObject):
         self._installer.progressChanged.connect(self._progressed)
         self._installer.completed.connect(self._done)
         self._busy = True
+        self._pending_plan, self._pending_profile = plan, profile
         self.installationChanged.emit()
         self._go('Installing')
-        self._installer.start(plan, profile)
+        if self._prefetch.active:
+            self._progressed(0.04)
+            self._prefetch.finished.connect(self._start_pending_install)
+            if not self._prefetch.active:
+                self._start_pending_install(True)
+        else:
+            self._start_pending_install(True)
+
+    def _start_pending_install(self, _ok=True):
+        with suppress(TypeError):
+            self._prefetch.finished.disconnect(self._start_pending_install)
+        plan, profile = self._pending_plan, self._pending_profile
+        self._pending_plan = self._pending_profile = None
+        if self._installer is None or plan is None:
+            return
+        self._installer.start(plan, profile, self._prefetch.archive())
 
     def _progressed(self, value):
         self._progress = max(self._progress, min(1.0, value))
@@ -231,9 +264,13 @@ class Controller(QObject):
         self._power('poweroff')
 
     def close(self):
-        if self._busy:
+        with suppress(TypeError):
+            self._prefetch.finished.disconnect(self._start_pending_install)
+        self._pending_plan = self._pending_profile = None
+        if self._busy and self._installer is not None:
             self._installer.cancel()
             self._installer.wait()
+        self._prefetch.close()
         self._wifi.close()
         self._probe_thread.join()
 

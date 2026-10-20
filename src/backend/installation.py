@@ -42,7 +42,7 @@ def _validate_esp(plan, mount):
         run(["umount", str(mount)])
 
 
-def _execute(plan, profile, progress):
+def _execute(plan, profile, progress, archive=None):
     _preflight()
     os.unshare(os.CLONE_NEWNS)
     run(["mount", "--make-rprivate", "/"])
@@ -60,8 +60,15 @@ def _execute(plan, profile, progress):
         storage.current_partition(plan.disk, root)
         system.mount_root(root, target)
         progress(0.04)
-        archive = system.fetch_rootfs(target / "var/tmp")
-        system.verify_rootfs(archive)
+        if archive is not None and Path(archive).is_file():
+            archive = Path(archive)
+            try:
+                system.verify_rootfs(archive)
+            except InstallError:
+                archive = None
+        if archive is None:
+            archive = system.fetch_rootfs(target / "var/tmp")
+            system.verify_rootfs(archive)
         progress(0.60)
         system.provision(target, root, boot if uefi else None, archive, profile, progress)
         storage.current_partition(plan.disk, boot)
@@ -132,10 +139,11 @@ def _execute(plan, profile, progress):
     return tuple(warnings)
 
 
-def install(plan: Plan, profile: Profile, progress=lambda value: None) -> tuple[str, ...]:
+def install(plan: Plan, profile: Profile, progress=lambda value: None, archive: Path | None = None) -> tuple[str, ...]:
     """Install in the dedicated child process, with a private mount namespace.
 
     A failed replacement cannot recover erased data. Power-loss resume is not supported.
+    When archive is set it must already exist on a path readable from this process.
     """
     profile.validate()
     fd = os.open("/run/pond-installer.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
@@ -144,4 +152,4 @@ def install(plan: Plan, profile: Profile, progress=lambda value: None) -> tuple[
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise InstallError("Another Pond installation is in progress") from error
-        return _execute(plan, profile, progress)
+        return _execute(plan, profile, progress, archive=archive)
