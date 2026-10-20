@@ -9,12 +9,14 @@ import signal
 
 from PySide6.QtCore import QObject, QProcess, Signal
 
-from .model import ROOTFS_STAGING_RESERVE, ROOTFS_URL
+from .model import GIB, ROOTFS_STAGING_RESERVE, ROOTFS_URL
 from .system import verify_rootfs
 
 CACHE_DIR = Path("/var/tmp/pond-rootfs-cache")
 ARCHIVE_NAME = "pond-rootfs.tar.zst"
 READY_MARKER = ARCHIVE_NAME + ".ready"
+_MEMORY_BACKED = frozenset({"tmpfs", "ramfs", "overlay"})
+_MEMORY_STAGING_RESERVE = 2 * GIB
 
 
 def staging_dir() -> Path:
@@ -38,8 +40,45 @@ def parse_content_length(headers: str) -> int | None:
     return length if length and length > 0 else None
 
 
+def _fstype(path: Path) -> str | None:
+    try:
+        resolved = path.resolve()
+    except OSError:
+        resolved = path
+    best, best_len = None, -1
+    try:
+        with open("/proc/mounts", encoding="utf-8") as mounts:
+            for line in mounts:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                mountpoint = parts[1].replace("\\040", " ")
+                if mountpoint != "/" and not (str(resolved) == mountpoint or str(resolved).startswith(mountpoint + "/")):
+                    continue
+                if len(mountpoint) > best_len:
+                    best, best_len = parts[2], len(mountpoint)
+    except OSError:
+        return None
+    return best
+
+
+def _mem_available() -> int | None:
+    try:
+        with open("/proc/meminfo", encoding="utf-8") as info:
+            for line in info:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) * 1024
+    except (OSError, ValueError):
+        return None
+    return None
+
+
 def can_stage(size: int, directory: Path | None = None) -> bool:
-    """True when directory's filesystem can hold size bytes plus a live reserve."""
+    """True when directory's filesystem can hold size bytes plus a live reserve.
+
+    On memory-backed live storage, free space from statvfs tracks
+    cow_spacesize and can exceed physical RAM, but also require MemAvailable.
+    """
     if size <= 0:
         return False
     path = Path(directory or CACHE_DIR)
@@ -52,7 +91,15 @@ def can_stage(size: int, directory: Path | None = None) -> bool:
     existing = 0
     with suppress(OSError):
         existing = (path / ARCHIVE_NAME).stat().st_size
-    return free + existing >= size + ROOTFS_STAGING_RESERVE
+    needed = size + ROOTFS_STAGING_RESERVE
+    if free + existing < needed:
+        return False
+    fstype = _fstype(path)
+    if fstype in _MEMORY_BACKED or fstype is None:
+        available = _mem_available()
+        if available is None or available < size + _MEMORY_STAGING_RESERVE:
+            return False
+    return True
 
 
 def discard_incomplete():
@@ -170,8 +217,11 @@ class PrefetchJob(QObject):
         size = parse_content_length(headers) if code == 0 and status == QProcess.NormalExit else None
         if size is None or not can_stage(size):
             self._active = False
+            discard_incomplete()
             if size is None:
                 logging.warning("Rootfs size probe failed (exit %s)", code)
+            else:
+                logging.info("Skipping rootfs prefetch; live storage cannot hold %s bytes safely", size)
             self.finished.emit(False)
             return
         discard_incomplete()
