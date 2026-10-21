@@ -250,6 +250,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.scrollMode ? 1033 : 787
         primaryEnabled: root.rowCount > 0
-        label: "Confirm"
+        label: "Next"
     }
 }
