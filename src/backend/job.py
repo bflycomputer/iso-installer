@@ -26,8 +26,12 @@ class InstallJob(QObject):
         self._cancelled = False
         self._download = ''
 
+    def launch(self):
+        if self.process.state() == QProcess.NotRunning:
+            self.process.start(sys.executable, ['-m', 'backend.worker'])
+
     def start(self, plan, profile):
-        self.process.start(sys.executable, ['-m', 'backend.worker'])
+        self.launch()
         self.process.write(json.dumps(request(plan, profile)).encode())
         self.process.closeWriteChannel()
 
