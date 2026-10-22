@@ -24,13 +24,16 @@ def drive_row(disk):
 def options(disk):
     if disk is None:
         return []
-    choices = []
+    choices, unavailable = [], []
     for mode in (backend.Mode.FREE_SPACE, backend.Mode.REPLACE):
         if mode is backend.Mode.FREE_SPACE and not disk.partitions:
             continue
         try:
             plan = backend.plan_install(disk, mode, boot_mode=backend.current_boot_mode())
+        except backend.NoSpaceError:
+            unavailable.append({'mode': mode.value, 'available': False})
+            continue
         except backend.InstallError:
             continue
-        choices.append({'mode': mode.value, 'plan': plan, 'preservesEfi': plan.esp is not None})
-    return choices
+        choices.append({'mode': mode.value, 'plan': plan, 'preservesEfi': plan.esp is not None, 'available': True})
+    return choices + unavailable

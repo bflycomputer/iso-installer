@@ -21,6 +21,8 @@ QtObject {
     readonly property color textCream: "#f8fff1"
     readonly property color chromeMuted: "#614e68"
     readonly property color disabled: "#4c5164"
+    readonly property color disabledFill: Qt.tint(bg, "#cc4c5164")
+    readonly property color disabledText: Qt.tint(bg, "#ccffffff")
     readonly property color onWifiActive: "#262326"
     readonly property color onCard: "#151515"
     readonly property color barUsed: "#fa6d80"

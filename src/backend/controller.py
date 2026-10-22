@@ -91,7 +91,7 @@ class Controller(QObject):
 
     def _option_data(self):
         options = self._options()
-        if not 0 <= self._option < len(options):
+        if not 0 <= self._option < len(options) or not options[self._option]['available']:
             raise backend.InstallError('Choose an available installation option.')
         return options[self._option]
 

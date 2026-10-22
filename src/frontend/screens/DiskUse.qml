@@ -6,7 +6,7 @@ Item {
     id: root
     anchors.fill: parent
 
-    readonly property int rowCount: options.count
+    readonly property int rowCount: controller.installOptions.filter(option => option.available).length
     readonly property int activeRow: rowCount > 0
         ? Math.max(0, Math.min(rowCount - 1, controller.selectedInstallOption)) : -1
     readonly property var drive: controller.selectedDriveData
@@ -92,9 +92,13 @@ Item {
             required property var modelData
             number: index + 1
             active: index === root.activeRow
-            title: modelData.mode === "free-space" ? "Install in unallocated space"
-                                                    : "Erase entire drive and install Pond"
-            detail: modelData.mode === "free-space"
+            enabled: modelData.available
+            title: !modelData.available ? "Not enough unallocated space"
+                   : modelData.mode === "free-space" ? "Install in unallocated space"
+                   : "Erase entire drive and install Pond"
+            detail: !modelData.available
+                    ? "Create at least 22 GB of unallocated space on this drive"
+                    : modelData.mode === "free-space"
                     ? "Use space that’s already free without erasing the rest of the drive."
                     : modelData.preservesEfi
                       ? "Delete everything on the selected drive (EFI partition is preserved)."

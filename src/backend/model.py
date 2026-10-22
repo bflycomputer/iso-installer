@@ -30,6 +30,10 @@ class InstallError(RuntimeError):
     """Installation failed; no password or network secret belongs in this error."""
 
 
+class NoSpaceError(InstallError):
+    pass
+
+
 class Mode(Enum):
     FREE_SPACE = "free-space"
     REPLACE = "replace"
@@ -136,7 +140,7 @@ def plan_install(disk: Disk, mode: Mode, *, boot_mode: BootMode = BootMode.UEFI)
     parts = disk.partitions if mode is Mode.FREE_SPACE else esps
     regions = gaps(disk.size, parts)
     if not regions:
-        raise InstallError("No contiguous unallocated space")
+        raise NoSpaceError("No contiguous unallocated space")
     start, available = max(regions, key=lambda r: r[1])
     bios = None
     if boot_mode is BootMode.BIOS and mode is Mode.FREE_SPACE:
@@ -148,7 +152,7 @@ def plan_install(disk: Disk, mode: Mode, *, boot_mode: BootMode = BootMode.UEFI)
     if mode is Mode.FREE_SPACE:
         total = available // GIB * GIB
         if total < MIN_ALLOCATION_GIB * GIB:
-            raise InstallError(f"Allocation must fit the largest free region and be at least {MIN_ALLOCATION_GIB} GiB")
+            raise NoSpaceError(f"Allocation must fit the largest free region and be at least {MIN_ALLOCATION_GIB} GiB")
     else:
         total = available
         if total - boot_bytes < MIN_ALLOCATION_GIB * GIB:

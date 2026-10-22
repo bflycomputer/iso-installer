@@ -9,7 +9,7 @@ Rectangle {
     height: 48
 
     radius: 24
-    color: badge.active ? Theme.lavender : Theme.surface
+    color: !badge.enabled ? Theme.disabledFill : badge.active ? Theme.lavender : Theme.surface
 
     Rectangle {
         anchors.centerIn: parent
@@ -22,7 +22,7 @@ Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: 2
             text: String(badge.number)
-            color: Theme.numText
+            color: badge.enabled ? Theme.numText : Theme.disabledFill
             font: Theme.base
             lh: Theme.lhBase
         }
