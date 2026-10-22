@@ -38,7 +38,7 @@ class Controller(QObject):
         self._username = self._password = self._confirmation = self._hostname = ''
         self._progress, self._failed, self._failure, self._warnings = 0.0, False, '', []
         self._disks, self._storage_ready, self._installer, self._busy = [], False, None, False
-        self._drives = DictModel(['name', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
+        self._drives = DictModel(['name', 'kind', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
         self._wifi = WifiModel(self)
         self._wifi.connectionFailed.connect(self._connection_failed)
         self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)

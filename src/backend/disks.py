@@ -8,14 +8,46 @@ def size_label(value):
     return f'{value / 1e12:.1f} TB' if value >= 1e12 else f'{value / 1e9:.1f} GB'
 
 
+def hotplug(device):
+    for parent in device.parents:
+        try:
+            state = (parent / 'removable').read_text().strip()
+        except OSError:
+            continue
+        if state in ('fixed', 'removable'):
+            return state == 'removable'
+    return False
+
+
+def drive_kind(block):
+    device = block.resolve()
+    chain = device.as_posix()
+    if '/usb' in chain:
+        return 'External USB'
+    if '/mmc_host/' in chain:
+        return 'SD card' if (block / 'device/type').read_text().strip() == 'SD' else 'Internal eMMC'
+    if '/nvme/' in chain:
+        bus = 'NVMe SSD'
+    elif '/ata' in chain:
+        bus = 'SATA HDD' if (block / 'queue/rotational').read_text().strip() == '1' else 'SATA SSD'
+    else:
+        return ''
+    return f"{'External' if hotplug(device) else 'Internal'} {bus}"
+
+
 def drive_row(disk):
     used = sum(p.size for p in disk.partitions)
+    block = Path('/sys/class/block') / Path(disk.path).name
     try:
-        name = (Path('/sys/class/block') / Path(disk.path).name / 'device/model').read_text().strip()
+        name = (block / 'device/model').read_text().strip()
     except OSError:
         name = ''
-    return {'name': name or Path(disk.path).name,
-            'detail': f'{len(disk.partitions)} partitions' if disk.partitions else 'Empty',
+    try:
+        kind = drive_kind(block)
+    except OSError:
+        kind = ''
+    return {'name': name or Path(disk.path).name, 'kind': kind,
+            'detail': ' • '.join(filter(None, (kind, '' if disk.partitions else 'Empty'))),
             'capacity': size_label(disk.size), 'used': size_label(used),
             'available': size_label(max(0, disk.size - used)),
             'capacityBytes': disk.size, 'usedBytes': used, 'empty': not disk.partitions}
