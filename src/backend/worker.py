@@ -5,9 +5,11 @@ import os
 from pathlib import Path
 import signal
 import sys
+import tempfile
 
 import backend
-from backend.model import Partition
+from backend import system
+from backend.model import GIB, Partition
 from backend.storage import revalidate
 
 
@@ -25,7 +27,20 @@ def decode(data):
     return plan, profile
 
 
-def execute(data, report):
+def prefetch(directory):
+    if not Path('/etc/pond-installer-live').is_file() or os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') < 7 * GIB:
+        return None
+    try:
+        archive = system.fetch_rootfs(directory)
+        system.verify_rootfs(archive)
+        return archive
+    except backend.InstallError:
+        for path in directory.iterdir():
+            path.unlink()
+        return None
+
+
+def execute(data, report, archive=None):
     if os.geteuid() != 0 or not Path('/etc/pond-installer-live').is_file():
         raise backend.InstallError('Installation requires the installer live environment as root')
     plan, profile = decode(data)
@@ -33,7 +48,7 @@ def execute(data, report):
     def progress(value):
         report({'type': 'progress', 'value': value})
 
-    warnings = backend.install(plan, profile, progress)
+    warnings = backend.install(plan, profile, progress, archive)
     progress(1)
     report({'type': 'done', 'warnings': list(warnings)})
 
@@ -53,7 +68,9 @@ def main():
         print(json.dumps(event), flush=True)
 
     try:
-        execute(json.load(sys.stdin), report)
+        with tempfile.TemporaryDirectory(prefix='pond-rootfs-') as directory:
+            archive = prefetch(Path(directory))
+            execute(json.load(sys.stdin), report, archive)
     except KeyboardInterrupt:
         report({'type': 'error', 'message': 'Installation cancelled. Check the target before trying again.'})
         return 1

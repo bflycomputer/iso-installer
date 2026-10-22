@@ -23,7 +23,7 @@ def fetch_rootfs(directory: Path) -> Path:
     """Download into caller-owned scratch space; installation verifies the checksum."""
     path = Path(directory) / "pond-rootfs.tar.zst"
     run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
-         "--retry-all-errors", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
+         "--retry-all-errors", "--remove-on-error", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
     return path
 
 

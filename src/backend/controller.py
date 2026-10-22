@@ -38,10 +38,12 @@ class Controller(QObject):
         self._username = self._password = self._confirmation = self._hostname = ''
         self._progress, self._failed, self._failure, self._warnings = 0.0, False, '', []
         self._disks, self._storage_ready, self._installer, self._busy = [], False, None, False
+        self._worker = None
         self._drives = DictModel(['name', 'kind', 'detail', 'capacity', 'used', 'available', 'capacityBytes', 'usedBytes', 'empty'], self)
         self._wifi = WifiModel(self)
         self._wifi.connectionFailed.connect(self._connection_failed)
         self._wifi.ethernetConnectedChanged.connect(self._ethernet_changed)
+        self._wifi.networkConnectedChanged.connect(self._prefetch)
         self._wifi.countChanged.connect(self.selectedNetworkChanged.emit)
         self.routeChanged.connect(lambda: self._wifi.setScanEnabled(self._route == 'WifiList'))
         self._probed.connect(self._set_disks)
@@ -113,6 +115,17 @@ class Controller(QObject):
     def _ethernet_changed(self):
         if self._wifi.ethernetConnected and self._route in ('WifiList', 'WifiPassword'):
             self._go('DriveSelect')
+
+    def _job(self):
+        job = InstallJob(self)
+        job.progressChanged.connect(self._progressed)
+        job.completed.connect(self._done)
+        return job
+
+    def _prefetch(self):
+        if self._wifi.networkConnected and self._installer is None and self._worker is None:
+            self._worker = self._job()
+            self._worker.launch()
 
     def _connection_failed(self, message):
         if self._route in ('WifiList', 'WifiPassword'):
@@ -190,9 +203,7 @@ class Controller(QObject):
         except backend.InstallError as error:
             self._set_error(str(error))
             return
-        self._installer = InstallJob(self)
-        self._installer.progressChanged.connect(self._progressed)
-        self._installer.completed.connect(self._done)
+        self._installer, self._worker = self._worker or self._job(), None
         self._busy = True
         self.installationChanged.emit()
         self._go('Installing')
@@ -203,6 +214,9 @@ class Controller(QObject):
         self.installationChanged.emit()
 
     def _done(self, ok, message, warnings):
+        if self._installer is None:
+            self._worker = None
+            return
         self._busy, self._failed, self._failure, self._warnings = False, not ok, message, warnings
         if not ok:
             logging.error('Installation failed: %s', message)
@@ -231,9 +245,10 @@ class Controller(QObject):
         self._power('poweroff')
 
     def close(self):
-        if self._busy:
-            self._installer.cancel()
-            self._installer.wait()
+        job = self._installer if self._busy else self._worker
+        if job:
+            job.cancel()
+            job.wait()
         self._wifi.close()
         self._probe_thread.join()
 
