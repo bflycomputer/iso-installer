@@ -177,7 +177,8 @@ Item {
 
                     Label {
                         visible: item.empty
-                        anchors.centerIn: parent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: Theme.capYBase(21)
                         text: "Empty"
                         color: Theme.bg
                         opacity: 0.7

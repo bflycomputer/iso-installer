@@ -105,7 +105,7 @@ QtObject {
     property FontMetrics fmSmR: FontMetrics { font: theme.smR }
 
     function capY(fm, lh, capTop) {
-        return capTop - ((lh - fm.height) / 2 + (fm.ascent - fm.capitalHeight))
+        return capTop + Math.round(fm.capitalHeight) - ((lh - Math.ceil(fm.height)) / 2 + fm.ascent)
     }
     function capYBase(capTop) { return capY(fmBase, lhBase, capTop) }
     function capYSm(capTop) { return capY(fmSm, lhSm, capTop) }
