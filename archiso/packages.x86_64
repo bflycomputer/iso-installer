@@ -24,6 +24,7 @@ qemu-guest-agent
 qt6-wayland
 sudo
 syslinux
+ttf-onest
 usb_modeswitch
 usbmuxd
 virtualbox-guest-utils-nox
