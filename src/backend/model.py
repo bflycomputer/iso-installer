@@ -16,7 +16,7 @@ ESP_BYTES = 512 * MIB
 ESP_TYPE = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 ROOT_TYPE = "0fc63daf-8483-4772-8e79-3d69d8477de4"
 BIOS_TYPE = "21686148-6449-6e6f-744e-656564454649"
-ROOTFS_SHA256 = "8236724d38f0041132220548095ed43f00119ef62c99dcbe24316ec6ccb14001"
+ROOTFS_SHA256 = "c6fb8b6004c1e95b54dcf4b5a7b1f3299843635d784a5d80ed91f16f6e759e9f"
 ROOTFS_URL = f"https://releases.butterfly.so/rootfs/{ROOTFS_SHA256}/pond-rootfs.tar.zst"
 SUBVOLUMES = (
     ("@", "/"), ("@home", "/home"), ("@root", "/root"), ("@srv", "/srv"),
