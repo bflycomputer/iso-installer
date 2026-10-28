@@ -22,6 +22,13 @@ profile:
 	rm -rf $(PROFILE)
 	mkdir -p $(PROFILE)/airootfs/usr/share/pond-installer
 	cp -a archiso/. $(PROFILE)
+	keyring="$$PWD/$(PROFILE)/keyring"; \
+		as_root=(); (( EUID == 0 )) || as_root=(unshare --map-root-user); \
+		install -d -m 0700 "$$keyring"; \
+		"$${as_root[@]}" pacman-key --gpgdir "$$keyring" --init; \
+		"$${as_root[@]}" pacman-key --gpgdir "$$keyring" --populate archlinux; \
+		"$${as_root[@]}" pacman-key --gpgdir "$$keyring" --populate-from archiso/keyrings --populate pond; \
+		sed -i "/^\[options\]/a GPGDir = $$keyring" $(PROFILE)/pacman.conf
 	tar -C src --exclude=__pycache__ -c backend frontend | tar -C $(PROFILE)/airootfs/usr/share/pond-installer -x
 ifneq ($(FONT_DIR),)
 	@for style in Regular RegularItalic Book Medium; do \
