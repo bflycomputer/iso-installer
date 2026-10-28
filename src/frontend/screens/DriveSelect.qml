@@ -139,7 +139,7 @@ Item {
                         Label {
                             x: 24
                             y: Theme.capYBase(stat.modelData.y)
-                            opacity: 0.7
+                            opacity: item.active ? 1 : 0.7
                             text: stat.modelData.label
                             color: item.active ? Theme.onCard : Theme.textWhite
                             font: Theme.base
@@ -148,7 +148,7 @@ Item {
                         Label {
                             x: 103
                             y: Theme.capYBase(stat.modelData.y)
-                            opacity: 0.7
+                            opacity: item.active ? 1 : 0.7
                             text: stat.modelData.value
                             color: item.active ? Theme.onCard : Theme.textWhite
                             font: Theme.base

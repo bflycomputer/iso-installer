@@ -210,12 +210,9 @@ Item {
             visible: tree.languageState() !== "active"
 
             Image {
-                anchors.centerIn: parent
-                width: 25
-                height: 30
-                rotation: 90
+                anchors.fill: parent
                 source: "assets/progress/language-completed.svg"
-                sourceSize: Qt.size(50, 60)
+                sourceSize: Qt.size(60, 50)
             }
             Label {
                 anchors.fill: parent
@@ -319,7 +316,7 @@ Item {
 
                 Rectangle {
                     visible: !decisionNode.pill
-                    x: 3; y: 3; width: 20; height: 20
+                    x: 4; y: 4; width: 20; height: 20
                     radius: 10
                     color: "transparent"
                     border.width: 1
@@ -327,7 +324,8 @@ Item {
                 }
 
                 Label {
-                    anchors.centerIn: parent
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: parent.height / 2 + 4 - baselineOffset
                     width: 8
                     text: String(tree.decisionChoice(decisionNode.index))
                     color: decisionNode.nodeColor

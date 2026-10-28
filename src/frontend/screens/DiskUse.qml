@@ -36,17 +36,17 @@ Item {
     Rectangle {
         y: 366
         anchors.horizontalCenter: parent.horizontalCenter
-        width: Math.max(144, driveName.implicitWidth + 28, driveDetails.implicitWidth + 28)
+        width: Math.max(144, driveName.implicitWidth + 26, driveDetails.implicitWidth + 26)
         height: 59
-        radius: 4
+        radius: 8
         color: "transparent"
         border.width: 1
         border.color: Qt.rgba(0.796, 0.651, 0.969, 0.6)
 
         Label {
             id: driveName
-            x: 14
-            y: 10
+            x: 13
+            y: 12
             text: root.drive ? root.drive.name : ""
             color: Theme.lavender
             font: Theme.displaySm
@@ -54,8 +54,8 @@ Item {
         }
         Label {
             id: driveDetails
-            x: 14
-            y: Theme.capYSm(34)
+            x: 13
+            y: Theme.capYSm(35)
             text: root.drive ? [root.drive.kind, root.drive.capacity, root.drive.used + " used"].filter(Boolean).join(" • ") : ""
             color: Theme.lavender
             opacity: 0.7
