@@ -80,13 +80,17 @@ def configure_keyboard(target, layout):
 def configure_hardware(target, progress=lambda value: None):
     prefix = ["arch-chroot", str(target)]
     # Refresh and upgrade the rootfs before installing hardware packages.
-    for args in (["pacman", "-Sy"], ["pacman", "-Su", "--noconfirm", "--disable-download-timeout"]):
+    for args, completed in (
+        (["pacman", "-Sy"], 0.84),
+        (["pacman", "-Su", "--noconfirm", "--disable-download-timeout"], 0.88),
+    ):
         for _ in range(7):  # Initial attempt plus six retries.
             result = run(prefix + args, check=False)
             if result.returncode == 0:
                 break
         else:
             raise InstallError(f"pacman failed (exit {result.returncode})")
+        progress(completed)
     run(prefix + ["chwd", "--autoconfigure"])
     progress(0.90)
     run(prefix + ["bash", "-c", "sed -i '/^HOOKS=/ { /[ (]autodetect[ )]/! s/ systemd / systemd autodetect /; }' /etc/mkinitcpio.conf.d/*pond.conf"])
@@ -104,7 +108,9 @@ def provision(target, root, esp, archive, profile, progress=lambda value: None):
     read_profile = "set -euo pipefail\n" + "\n".join(
         f"IFS= read -r POND_{name}" for name in ("USERNAME", "PASSWORD", "TIMEZONE", "HOSTNAME")) + "\n"
     run(prefix + ["bash", "-c", read_profile + (ASSETS / "configure.sh").read_text()], input=profile.credentials())
+    progress(0.80)
     configure_locale(target, profile.locale)
+    progress(0.81)
     configure_keyboard(target, profile.keyboard_layout)
     network = target / "etc/NetworkManager/system-connections"
     network.mkdir(parents=True, exist_ok=True, mode=0o700)

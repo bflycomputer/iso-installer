@@ -78,6 +78,7 @@ def _execute(plan, profile, progress, archive=None):
         if not (target / "boot/grub/grub.cfg").stat().st_size:
             raise InstallError("Pond's boot menu is empty")
         run(["arch-chroot", str(target), "grub-script-check", "/boot/grub/grub.cfg"])
+        progress(0.97)
         if uefi:
             candidate = esp_mount / "EFI/pond"
             candidate.mkdir(parents=True, exist_ok=True)
