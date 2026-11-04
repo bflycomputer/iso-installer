@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import shutil
 import sys
+import time
 
 from .command import run
 from .model import InstallError, ROOTFS_SHA256, ROOTFS_URL, SUBVOLUMES
@@ -84,7 +85,9 @@ def configure_hardware(target, progress=lambda value: None):
         (["pacman", "-Sy"], 0.84),
         (["pacman", "-Su", "--noconfirm", "--disable-download-timeout"], 0.88),
     ):
-        for _ in range(7):  # Initial attempt plus six retries.
+        for attempt in range(21):  # Initial attempt plus twenty retries.
+            if attempt:
+                time.sleep(10)
             result = run(prefix + args, check=False)
             if result.returncode == 0:
                 break
