@@ -13,15 +13,6 @@ from .model import BootMode, InstallError, Plan, Profile
 from . import system, storage
 
 
-def _preflight():
-    if os.geteuid() != 0 or not Path("/etc/pond-installer-live").is_file():
-        raise InstallError("Installation requires the installer live environment as root")
-    required = ("lsblk", "udevadm", "wipefs", "mkfs.btrfs", "mkfs.fat", "btrfs", "blkid",
-                "mount", "mountpoint", "umount", "bsdtar", "arch-chroot", "efibootmgr", "sync")
-    if any(shutil.which(command) is None for command in required):
-        raise InstallError("The live environment is missing an installation dependency")
-
-
 def _validate_esp(plan, mount):
     if plan.esp is None:
         return
@@ -43,7 +34,6 @@ def _validate_esp(plan, mount):
 
 
 def _execute(plan, profile, progress, archive=None):
-    _preflight()
     os.unshare(os.CLONE_NEWNS)
     run(["mount", "--make-rprivate", "/"])
     target = Path(tempfile.mkdtemp(prefix="pond-target-", dir="/mnt"))
