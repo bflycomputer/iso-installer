@@ -23,8 +23,12 @@ def verify_rootfs(archive):
 def fetch_rootfs(directory: Path) -> Path:
     """Download into caller-owned scratch space; installation verifies the checksum."""
     path = Path(directory) / "pond-rootfs.tar.zst"
-    run(["curl", "--fail", "--location", "--proto", "=https", "--retry", "3",
-         "--retry-all-errors", "--speed-limit", "1024", "--speed-time", "60", "--remove-on-error", "--progress-bar", "--output", str(path), ROOTFS_URL], stderr=sys.stderr)
+    command = ["aria2c", "--file-allocation=none", "--max-tries=20", "--retry-wait=5",
+               "--auto-file-renaming=false", "--connect-timeout=10", "--stderr",
+               "--dir", str(path.parent), "--out", path.name, ROOTFS_URL]
+    if run(command, check=False, stderr=sys.stderr).returncode:
+        time.sleep(10)
+        run(command, stderr=sys.stderr)
     return path
 
 

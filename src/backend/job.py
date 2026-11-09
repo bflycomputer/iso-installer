@@ -53,7 +53,7 @@ class InstallJob(QObject):
         lines = self._download.replace('\r', '\n').split('\n')
         self._download = lines.pop()[-256:]
         for line in lines:
-            match = re.search(r'(\d+(?:\.\d+)?)%\s*$', line)
+            match = re.search(r'^\[#[0-9a-f]+\s+[^\]]*?\((\d+)%\)', line)
             if match and not self._cancelled:
                 self.progressChanged.emit(0.04 + 0.56 * float(match[1]) / 100)
 
