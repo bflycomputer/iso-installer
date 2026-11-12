@@ -23,6 +23,7 @@ pyside6
 python-libblockdev
 qemu-guest-agent
 qt6-wayland
+rate-mirrors
 sudo
 syslinux
 ttf-onest

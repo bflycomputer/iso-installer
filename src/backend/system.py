@@ -82,8 +82,20 @@ def configure_keyboard(target, layout):
             break
 
 
+def rank_mirrors(target):
+    # Prefer the fastest Arch mirrors for this network; the default servers stay as a fallback.
+    mirrorlist = target / "etc/pacman.d/mirrorlist"
+    run(["timeout", "180", "rate-mirrors", "--allow-root", "--protocol", "https",
+         "--max-mirrors-to-output", "10", "--save", str(mirrorlist), "arch"], check=False)
+    if "\nServer = " in mirrorlist.read_text():
+        conf = target / "etc/pacman.conf"
+        conf.write_text(re.sub(r"^\[(core|extra|multilib)\]\n", r"\g<0>Include = /etc/pacman.d/mirrorlist\n",
+                               conf.read_text(), flags=re.M))
+
+
 def configure_hardware(target, progress=lambda value: None):
     prefix = ["arch-chroot", str(target)]
+    rank_mirrors(target)
     # Refresh and upgrade the rootfs before installing hardware packages.
     for args, completed in (
         (["pacman", "-Sy"], 0.84),
